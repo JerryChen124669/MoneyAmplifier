@@ -26,7 +26,7 @@ export function render(root, id) {
           onClick: () => { if (form.type !== t) { form.type = t; form.category = ''; draw(); } },
         }, t === 'expense' ? 'Expense' : 'Income'))),
       h('div', { class: 'card' }, amountEl),
-      h('div', { class: 'card' }, h('h2', {}, 'Category'),
+      h('div', { class: 'card' }, h('h2', {}, '🏷️ Category'),
         h('div', { class: 'chips' }, cats.map((c) => h('button', {
           class: `chip ${form.category === c ? 'on' : ''}`,
           onClick: () => { form.category = c; draw(); },
@@ -49,7 +49,7 @@ export function render(root, id) {
       if (existing) st.transactions[st.transactions.findIndex((t) => t.id === existing.id)] = record;
       else st.transactions.push(record);
     }, { silent: true });
-    toast('Saved');
+    toast('Saved! ✨');
     if (existing) location.hash = '#/history';
     else { form.amount = ''; form.note = ''; draw(); }
   }

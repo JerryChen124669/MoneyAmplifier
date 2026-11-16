@@ -10,7 +10,7 @@ const dir = path.join(root, 'icons');
 const source = ['icon-source.png', 'icon-source.svg'].map((f) => path.join(dir, f)).find(existsSync);
 if (!source) throw new Error('Put icon-source.png or icon-source.svg in the icons folder.');
 
-const bg = '#0f766e'; // background colour used for the safe-zone padding of the maskable icon
+const bg = '#ffa5c0'; // background colour used for the safe-zone padding of the maskable icon
 const plain = (size, name) => sharp(source, { density: 384 }).resize(size, size, { fit: 'cover' }).png().toFile(path.join(dir, name));
 
 await plain(192, 'icon-192.png');

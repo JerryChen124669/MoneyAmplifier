@@ -1,17 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- MoneyAmplifier icon. Replace this file (or add icon-source.png, 1024x1024) then run: npm run icons -->
+  <!-- MoneyAmplifier app icon: piggy bank with a coin. Replace this file (or add icon-source.png, 1024x1024), then run: npm run icons -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#14b8a6"/>
-      <stop offset="1" stop-color="#0f766e"/>
+      <stop offset="0" stop-color="#ffc2d4"/>
+      <stop offset="1" stop-color="#ff8fb1"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <!-- rising bars -->
-  <rect x="122" y="300" width="64" height="100" rx="14" fill="#ffffff" fill-opacity=".55"/>
-  <rect x="224" y="240" width="64" height="160" rx="14" fill="#ffffff" fill-opacity=".78"/>
-  <rect x="326" y="170" width="64" height="230" rx="14" fill="#ffffff"/>
-  <!-- up arrow -->
-  <path d="M130 250 L250 170 L300 205 L392 118" fill="none" stroke="#fde68a" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M338 114 L394 114 L394 170" fill="none" stroke="#fde68a" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- sparkles -->
+  <path d="M96 120l7 18 18 7-18 7-7 18-7-18-18-7 18-7z" fill="#fff" opacity=".9"/>
+  <path d="M420 250l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#fff" opacity=".8"/>
+  <path d="M410 96l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff" opacity=".7"/>
+  <!-- ears -->
+  <g fill="#ff9cb8" stroke="#ff9cb8" stroke-width="18" stroke-linejoin="round">
+    <path d="M150 232 L160 162 L232 196 Z"/>
+    <path d="M362 232 L352 162 L280 196 Z"/>
+  </g>
+  <!-- head -->
+  <circle cx="256" cy="308" r="136" fill="#ffe4ec"/>
+  <!-- coin -->
+  <circle cx="256" cy="118" r="44" fill="#ffd166" stroke="#f4a62a" stroke-width="10"/>
+  <text x="256" y="136" font-family="Arial, sans-serif" font-size="52" font-weight="700" text-anchor="middle" fill="#e08a00">$</text>
+  <rect x="226" y="164" width="60" height="12" rx="6" fill="#f08aa8"/>
+  <!-- face -->
+  <ellipse cx="256" cy="338" rx="56" ry="40" fill="#ffb3c8"/>
+  <ellipse cx="236" cy="338" rx="9" ry="13" fill="#c2557a"/>
+  <ellipse cx="276" cy="338" rx="9" ry="13" fill="#c2557a"/>
+  <circle cx="204" cy="282" r="15" fill="#4a3b47"/>
+  <circle cx="308" cy="282" r="15" fill="#4a3b47"/>
+  <circle cx="209" cy="277" r="5" fill="#fff"/>
+  <circle cx="313" cy="277" r="5" fill="#fff"/>
+  <ellipse cx="168" cy="332" rx="24" ry="15" fill="#ff7fa1" opacity=".45"/>
+  <ellipse cx="344" cy="332" rx="24" ry="15" fill="#ff7fa1" opacity=".45"/>
 </svg>

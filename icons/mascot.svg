@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 50 392 410" width="392" height="410">
+  <!-- Piggy mascot (transparent background), used inside the app -->
+  <g fill="#ff9cb8" stroke="#ff9cb8" stroke-width="18" stroke-linejoin="round">
+    <path d="M150 232 L160 162 L232 196 Z"/>
+    <path d="M362 232 L352 162 L280 196 Z"/>
+  </g>
+  <circle cx="256" cy="308" r="136" fill="#ffe4ec" stroke="#ffb3c8" stroke-width="6"/>
+  <circle cx="256" cy="118" r="44" fill="#ffd166" stroke="#f4a62a" stroke-width="10"/>
+  <text x="256" y="136" font-family="Arial, sans-serif" font-size="52" font-weight="700" text-anchor="middle" fill="#e08a00">$</text>
+  <rect x="226" y="164" width="60" height="12" rx="6" fill="#f08aa8"/>
+  <ellipse cx="256" cy="338" rx="56" ry="40" fill="#ffb3c8"/>
+  <ellipse cx="236" cy="338" rx="9" ry="13" fill="#c2557a"/>
+  <ellipse cx="276" cy="338" rx="9" ry="13" fill="#c2557a"/>
+  <circle cx="204" cy="282" r="15" fill="#4a3b47"/>
+  <circle cx="308" cy="282" r="15" fill="#4a3b47"/>
+  <circle cx="209" cy="277" r="5" fill="#fff"/>
+  <circle cx="313" cy="277" r="5" fill="#fff"/>
+  <ellipse cx="168" cy="332" rx="24" ry="15" fill="#ff7fa1" opacity=".45"/>
+  <ellipse cx="344" cy="332" rx="24" ry="15" fill="#ff7fa1" opacity=".45"/>
+</svg>

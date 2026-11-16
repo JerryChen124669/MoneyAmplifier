@@ -14,8 +14,15 @@ export function render(root) {
   const expense = sum(txs.filter((t) => t.type === 'expense'), (t) => t.amount);
   const balance = income - expense;
 
+  const mood = !txs.length ? "Oink! Let's add your first entry ✨"
+    : balance >= 0 ? `Yay! You're keeping ${money(balance, currency)} this month 🌸`
+    : "A little over this month. You've got this! 💪";
+
   root.append(
     monthNav(() => window.dispatchEvent(new HashChangeEvent('hashchange'))),
+    h('div', { class: 'card hero' },
+      h('img', { src: 'icons/mascot.svg', alt: 'Piggy mascot' }),
+      h('div', { class: 'bubble grow' }, mood)),
     h('div', { class: 'card' },
       h('div', { class: 'muted' }, 'Balance'),
       h('div', { class: `big ${balance >= 0 ? 'income' : 'expense'}` }, money(balance, currency)),
@@ -28,7 +35,7 @@ export function render(root) {
   const byCat = {};
   txs.filter((t) => t.type === 'expense').forEach((t) => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
   const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-  const chartCard = h('div', { class: 'card' }, h('h2', {}, 'Spending by category'));
+  const chartCard = h('div', { class: 'card' }, h('h2', {}, '🍩 Spending by category'));
   let chart = null;
   if (!cats.length) {
     chartCard.append(empty('No spending in this period yet. Tap + to add one.'));
@@ -44,7 +51,7 @@ export function render(root) {
   root.append(chartCard);
 
   const recent = [...txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
-  root.append(h('div', { class: 'card' }, h('h2', {}, 'Recent'),
+  root.append(h('div', { class: 'card' }, h('h2', {}, '🧾 Recent'),
     recent.length ? recent.map(txRow) : empty('Nothing recorded yet.'),
     recent.length ? h('a', { href: '#/history', class: 'muted' }, 'See all →') : null));
 
