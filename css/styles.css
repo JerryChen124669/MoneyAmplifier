@@ -127,6 +127,13 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .bar.over > i { background: linear-gradient(90deg, #ffb199, var(--danger)); }
 .limit-input { width: 112px; margin: 0; text-align: right; padding: 8px 12px; }
 .chart-box { position: relative; height: 230px; }
+.chart-box.tall { height: 320px; }
+.section-title { margin: 18px 8px 0; font-size: .95rem; font-weight: 800; color: var(--brand); }
+.nw-link { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.nw-link .chev { font-size: 1.8rem; color: var(--brand); font-weight: 800; }
+.tx-btn { width: 100%; background: transparent; border: 0; border-bottom: 1.5px dashed var(--line); border-radius: 0; padding: 12px 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.tx-btn:active { transform: none; opacity: .7; }
+.tx-btn:last-child { border-bottom: 0; }
 
 #toast {
   position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 28px); transform: translate(-50%, 20px);

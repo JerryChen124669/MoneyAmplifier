@@ -10,7 +10,7 @@ Personal money tracker (spending, budgets, net worth). A static web app / PWA: p
 | `js/app.js` | Router: maps `#/home`, `#/add`, … to a view module |
 | `js/store.js` | The data model, saving, import/export. **Add new data fields here** |
 | `js/util.js`, `js/components.js` | Helpers and shared UI bits |
-| `js/views/*.js` | One file per page: home, add, history, budget, wealth, settings |
+| `js/views/*.js` | One file per page: home, add, history, invest, wealth (net worth), settings |
 | `sw.js` + `manifest.webmanifest` | Offline support and home-screen install |
 | `icons/icon-source.svg` | Your app icon. Replace it, then `npm run icons` |
 | `vendor/chart.umd.js` | Chart.js (MIT licence), bundled so it works offline |

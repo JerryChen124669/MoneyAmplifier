@@ -1,6 +1,6 @@
 // Settings: currency, billing-period start day, categories, backup / restore.
 import { h, download, today } from '../util.js';
-import { getState, update, replaceAll, exportJSON, exportCSV, defaults } from '../store.js';
+import { getState, update, replaceAll, exportJSON, exportCSV, exportInvestmentsCSV, defaults } from '../store.js';
 import { toast } from '../components.js';
 
 export const title = 'Settings';
@@ -33,12 +33,11 @@ export function render(root) {
     update((st) => {
       st.categories[type] = st.categories[type].map((c) => (c === oldName ? name : c));
       st.transactions.forEach((t) => { if (t.type === type && t.category === oldName) t.category = name; });
-      if (type === 'expense' && st.budgets[oldName] != null) { st.budgets[name] = st.budgets[oldName]; delete st.budgets[oldName]; }
     });
   }
   function removeCat(type, name) {
     if (!confirm(`Remove "${name}"? Past entries keep their label.`)) return;
-    update((st) => { st.categories[type] = st.categories[type].filter((c) => c !== name); delete st.budgets[name]; });
+    update((st) => { st.categories[type] = st.categories[type].filter((c) => c !== name); });
   }
 
   function importFile(file) {
@@ -67,6 +66,7 @@ export function render(root) {
       h('p', { class: 'muted', style: 'margin:0' }, 'Data is stored only in this browser on this device. Export a backup regularly, especially before clearing browser data.'),
       h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-backup-${today()}.json`, exportJSON()) }, 'Export backup (JSON)'),
       h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-${today()}.csv`, exportCSV(), 'text/csv') }, 'Export transactions (CSV)'),
+      h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-investments-${today()}.csv`, exportInvestmentsCSV(), 'text/csv') }, 'Export investments (CSV)'),
       h('button', { class: 'btn-block', onClick: () => fileInput.click() }, 'Restore from backup…'),
       fileInput,
       h('button', {

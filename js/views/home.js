@@ -1,6 +1,6 @@
 // Home: totals for the selected period, spending-by-category chart, recent transactions.
 import { h, money, sum, periodRange } from '../util.js';
-import { getState } from '../store.js';
+import { getState, netWorthNow } from '../store.js';
 import { monthNav, txRow, empty, activePeriod, PALETTE, cssVar } from '../components.js';
 
 export const title = 'MoneyAmplifier';
@@ -30,6 +30,13 @@ export function render(root) {
         h('div', {}, h('span', { class: 'muted' }, 'Income'), h('b', { class: 'income' }, money(income, currency))),
         h('div', {}, h('span', { class: 'muted' }, 'Spent'), h('b', { class: 'expense' }, money(expense, currency))),
         h('div', {}, h('span', { class: 'muted' }, 'Entries'), h('b', {}, txs.length)))));
+
+  const nw = netWorthNow(s);
+  root.append(h('a', { class: 'card nw-link', href: '#/wealth' },
+    h('div', { class: 'grow' },
+      h('div', { class: 'muted' }, 'Net worth · daily account + investments − debts'),
+      h('div', { class: `big ${nw.net >= 0 ? 'income' : 'expense'}` }, money(nw.net, currency))),
+    h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')));
 
   // spending by category
   const byCat = {};

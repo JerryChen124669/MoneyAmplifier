@@ -4,11 +4,11 @@ import { subscribe } from './store.js';
 import * as home from './views/home.js';
 import * as history from './views/history.js';
 import * as add from './views/add.js';
-import * as budget from './views/budget.js';
+import * as invest from './views/invest.js';
 import * as wealth from './views/wealth.js';
 import * as settings from './views/settings.js';
 
-const routes = { home, history, add, budget, wealth, settings };
+const routes = { home, history, add, invest, wealth, settings };
 const root = document.getElementById('view');
 let cleanup = null;
 

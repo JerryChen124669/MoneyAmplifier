@@ -1,8 +1,8 @@
 // Shared UI pieces used by several views.
-import { h, money, periodKeyFor, periodLabel, shiftKey, today } from './util.js';
+import { h, money, sum, periodKeyFor, periodLabel, shiftKey, today } from './util.js';
 import { getState } from './store.js';
 
-/** Which month/period the Home, History and Budget tabs are showing (kept while you switch tabs). */
+/** Which month/period the Home and History tabs are showing (kept while you switch tabs). */
 export const ui = { period: null };
 export function currentPeriod() {
   return periodKeyFor(today(), getState().settings.startDay);
@@ -47,4 +47,34 @@ export const PALETTE = ['#ff7fa1', '#ffb86b', '#7bd3b0', '#8fb8ff', '#c4a1ff', '
 
 export function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+if (typeof Chart !== 'undefined') Chart.defaults.font.family = "'Nunito', ui-rounded, system-ui, sans-serif";
+
+/**
+ * Doughnut chart of [[label, value], ...] with percentages in the legend.
+ * Returns { el, destroy } – call destroy() when the view is torn down or redrawn.
+ */
+export function donut(entries, currency) {
+  const total = sum(entries, (e) => e[1]);
+  const canvas = h('canvas');
+  const el = h('div', { class: 'chart-box tall' }, canvas);
+  let chart = null;
+  if (typeof Chart !== 'undefined' && total > 0) {
+    chart = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: entries.map((e) => `${e[0]} · ${Math.round((e[1] / total) * 100)}%`),
+        datasets: [{ data: entries.map((e) => e[1]), backgroundColor: entries.map((_, i) => PALETTE[i % PALETTE.length]), borderColor: cssVar('--surface'), borderWidth: 2 }],
+      },
+      options: {
+        maintainAspectRatio: false, cutout: '58%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color: cssVar('--text'), boxWidth: 12, padding: 10 } },
+          tooltip: { callbacks: { label: (c) => ' ' + money(c.parsed, currency) } },
+        },
+      },
+    });
+  }
+  return { el, destroy: () => chart && chart.destroy() };
 }

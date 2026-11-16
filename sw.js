@@ -1,12 +1,12 @@
 // Service worker: network-first (so new versions show up), cache fallback (so the app opens offline).
 // Bump CACHE_NAME and add new files to PRECACHE whenever you add files to the app.
-const CACHE_NAME = 'moneyamplifier-v2';
+const CACHE_NAME = 'moneyamplifier-v3';
 const PRECACHE = [
   './', './index.html', './manifest.webmanifest',
   './css/styles.css',
   './js/app.js', './js/util.js', './js/store.js', './js/components.js',
   './js/views/home.js', './js/views/add.js', './js/views/history.js',
-  './js/views/budget.js', './js/views/wealth.js', './js/views/settings.js',
+  './js/views/invest.js', './js/views/wealth.js', './js/views/settings.js',
   './vendor/chart.umd.js', './fonts/nunito-latin.woff2', './icons/mascot.svg',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
 ];
