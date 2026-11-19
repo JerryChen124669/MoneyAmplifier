@@ -48,7 +48,7 @@ export function render(root) {
   if (parts.length) {
     const d = donut(parts, currency);
     charts.push(d);
-    root.append(h('div', { class: 'card' }, h('h2', {}, '🥧 Where your money is'), d.el));
+    root.append(h('div', { class: 'card' }, h('h2', {}, '🥎 Where your money is'), d.el));
   }
 
   // cash vs time and investments vs time: side by side on wide screens, one at a time (with a switch) on phones
@@ -85,8 +85,8 @@ export function render(root) {
       return chart;
     };
     const panes = [
-      { key: 'cash', label: '💵 Cash', title: 'Daily account over time', pts: cashPts, color: '#e8467a', soft: 'rgba(232,70,122,.15)', now: now.cash },
-      { key: 'invest', label: '📈 Investments', title: 'Investments over time', pts: investPts, color: '#3fb58a', soft: 'rgba(63,181,138,.18)', now: now.invest },
+      { key: 'cash', label: '💵 Cash', title: 'Daily account over time', pts: cashPts, color: '#a8693a', soft: 'rgba(168,105,58,.16)', now: now.cash },
+      { key: 'invest', label: '📈 Investments', title: 'Investments over time', pts: investPts, color: '#6f9a6b', soft: 'rgba(111,154,107,.2)', now: now.invest },
     ].map((p) => {
       p.canvas = h('canvas');
       const body = p.pts.length ? h('div', { class: 'chart-box' }, p.canvas) : empty('Nothing to chart yet.');
@@ -120,7 +120,7 @@ export function render(root) {
       },
     }, 'Save')));
 
-  root.append(h('div', { class: 'card' }, h('h2', {}, '🗓️ Monthly snapshots'),
+  root.append(h('div', { class: 'card' }, h('h2', {}, '🪀 Monthly snapshots'),
     rows.length ? [...rows].reverse().map((r) => h('div', { class: 'tx' },
       h('div', { class: 'grow' }, h('div', { class: 'name' }, r.month), h('div', { class: 'muted' }, `Cash ${money(r.cash, currency)} · Invest ${money(r.invest, currency)} · Debts ${money(r.debts, currency)}`)),
       h('div', { class: 'amt' }, money(net(r), currency)),

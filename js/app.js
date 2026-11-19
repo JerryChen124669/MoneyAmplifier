@@ -32,6 +32,18 @@ function render() {
   }
 }
 
+// tap any tab: the tail wags and the Shiba's bottom bounces (even if you tap the tab you are already on)
+const bar = document.querySelector('.tabbar');
+let wagTimer;
+bar.addEventListener('click', (e) => {
+  if (!e.target.closest('a')) return;
+  bar.classList.remove('wag');
+  void bar.offsetWidth; // restart the animation
+  bar.classList.add('wag');
+  clearTimeout(wagTimer);
+  wagTimer = setTimeout(() => bar.classList.remove('wag'), 800);
+});
+
 window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
 subscribe(render); // any saved change re-draws the current page
 render();

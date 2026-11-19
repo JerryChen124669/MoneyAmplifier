@@ -104,7 +104,7 @@ export function toast(message) {
 }
 
 /** Colours for charts (works in light and dark). */
-export const PALETTE = ['#ff7fa1', '#ffb86b', '#7bd3b0', '#8fb8ff', '#c4a1ff', '#ffd966', '#ff9a8b', '#6fd1e0', '#b6e07a', '#f4a6d7', '#a3a3d9', '#e0b38a'];
+export const PALETTE = ['#d9985f', '#8c5a3c', '#e9c9a0', '#7a9a7e', '#c27a52', '#e0b86b', '#a67c52', '#9db4a0', '#b56b4d', '#d4a59a', '#6e5b4a', '#f0d9b5'];
 
 export function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();

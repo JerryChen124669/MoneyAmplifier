@@ -1,12 +1,12 @@
 {
   "name": "MoneyAmplifier",
   "short_name": "MoneyAmp",
-  "description": "Personal money tracker: spending, budgets and net worth.",
+  "description": "Personal money tracker with a Shiba: spending, investments and net worth.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffc2d4",
-  "theme_color": "#fff5f0",
+  "background_color": "#f4d3a6",
+  "theme_color": "#fbf3e8",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

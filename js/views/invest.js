@@ -56,7 +56,7 @@ export function render(root) {
     const entries = Object.entries(totals).filter((e) => e[1] > 0).sort((a, b) => b[1] - a[1]);
     chart = entries.length ? donut(entries, currency) : null;
     root.append(h('div', { class: 'card' },
-      h('h2', {}, '🥧 Composition'),
+      h('h2', {}, '🧸 Composition'),
       h('div', { class: 'segmented', style: 'margin-bottom:10px' },
         [['type', 'By type'], ['institution', 'By institution']].map(([k, label]) =>
           h('button', { class: view.group === k ? 'on' : '', onClick: () => { view.group = k; draw(); } }, label))),
@@ -65,7 +65,7 @@ export function render(root) {
     // list, grouped by institution
     const byInst = {};
     s.investments.forEach((i) => (byInst[i.institution || 'No institution'] ||= []).push(i));
-    root.append(h('h2', { class: 'section-title' }, '🏦 Holdings'));
+    root.append(h('h2', { class: 'section-title' }, '🥎 Holdings'));
     Object.entries(byInst).sort((a, b) => sum(b[1], (x) => x.amount) - sum(a[1], (x) => x.amount)).forEach(([inst, items]) => {
       root.append(h('div', { class: 'day-head' }, h('span', {}, inst), h('span', {}, money(sum(items, (x) => x.amount), currency))),
         h('div', { class: 'card', style: 'padding:4px 16px;margin-bottom:0' },
@@ -112,7 +112,7 @@ export function render(root) {
     };
 
     return h('div', { class: 'card stack' },
-      h('h2', {}, existing ? '✏️ Edit investment' : '🌱 New investment'),
+      h('h2', {}, existing ? '✏️ Edit investment' : '🦴 New investment'),
       h('label', { class: 'field' }, 'Name (e.g. TSMC, 0050, US Treasury 10Y)', h('input', { type: 'text', maxlength: '60', value: f.name, onInput: (e) => { f.name = e.target.value; } })),
       h('label', { class: 'field' }, 'Type',
         h('select', { value: f.type, onChange: (e) => { f.type = e.target.value; } }, INVEST_TYPES.map((t) => h('option', { value: t }, `${TYPE_EMOJI[t]} ${t}`)))),

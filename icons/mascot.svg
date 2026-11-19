@@ -1,20 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 50 392 410" width="392" height="410">
-  <!-- Piggy mascot (transparent background), used inside the app -->
-  <g fill="#ff9cb8" stroke="#ff9cb8" stroke-width="18" stroke-linejoin="round">
-    <path d="M150 232 L160 162 L232 196 Z"/>
-    <path d="M362 232 L352 162 L280 196 Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 190" width="200" height="190">
+  <!-- Shiba Inu mascot (transparent background), used inside the app -->
+  <defs>
+    <clipPath id="head"><ellipse cx="100" cy="112" rx="84" ry="68"/></clipPath>
+  </defs>
+  <g stroke="#7a4b2a" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- ears -->
+    <path d="M26 86 C16 46 26 18 40 10 C62 16 86 34 96 54 Z" fill="#e0a35f"/>
+    <path d="M174 86 C184 46 174 18 160 10 C138 16 114 34 104 54 Z" fill="#e0a35f"/>
+    <path d="M36 68 C32 46 36 30 42 24 C54 30 66 40 72 52 Z" fill="#f6d5ab" stroke="none"/>
+    <path d="M164 68 C168 46 164 30 158 24 C146 30 134 40 128 52 Z" fill="#f6d5ab" stroke="none"/>
+    <!-- head -->
+    <ellipse cx="100" cy="112" rx="84" ry="68" fill="#e0a35f"/>
+    <!-- cream cheeks and muzzle -->
+    <g clip-path="url(#head)" stroke="none">
+      <path d="M10 124 C20 96 54 94 78 108 C90 114 110 114 122 108 C146 94 180 96 190 124 L190 190 L10 190 Z" fill="#fff3df"/>
+    </g>
+    <ellipse cx="100" cy="112" rx="84" ry="68" fill="none"/>
   </g>
-  <circle cx="256" cy="308" r="136" fill="#ffe4ec" stroke="#ffb3c8" stroke-width="6"/>
-  <circle cx="256" cy="118" r="44" fill="#ffd166" stroke="#f4a62a" stroke-width="10"/>
-  <text x="256" y="136" font-family="Arial, sans-serif" font-size="52" font-weight="700" text-anchor="middle" fill="#e08a00">$</text>
-  <rect x="226" y="164" width="60" height="12" rx="6" fill="#f08aa8"/>
-  <ellipse cx="256" cy="338" rx="56" ry="40" fill="#ffb3c8"/>
-  <ellipse cx="236" cy="338" rx="9" ry="13" fill="#c2557a"/>
-  <ellipse cx="276" cy="338" rx="9" ry="13" fill="#c2557a"/>
-  <circle cx="204" cy="282" r="15" fill="#4a3b47"/>
-  <circle cx="308" cy="282" r="15" fill="#4a3b47"/>
-  <circle cx="209" cy="277" r="5" fill="#fff"/>
-  <circle cx="313" cy="277" r="5" fill="#fff"/>
-  <ellipse cx="168" cy="332" rx="24" ry="15" fill="#ff7fa1" opacity=".45"/>
-  <ellipse cx="344" cy="332" rx="24" ry="15" fill="#ff7fa1" opacity=".45"/>
+  <!-- eyebrow spots -->
+  <ellipse cx="66" cy="85" rx="7" ry="4.5" fill="#f6d5ab"/>
+  <ellipse cx="134" cy="85" rx="7" ry="4.5" fill="#f6d5ab"/>
+  <!-- eyes -->
+  <ellipse cx="66" cy="104" rx="7.5" ry="9" fill="#3d2616"/>
+  <ellipse cx="134" cy="104" rx="7.5" ry="9" fill="#3d2616"/>
+  <circle cx="68.6" cy="100.6" r="2.8" fill="#fff"/>
+  <circle cx="136.6" cy="100.6" r="2.8" fill="#fff"/>
+  <!-- blush -->
+  <ellipse cx="42" cy="130" rx="11" ry="6.5" fill="#f2a98a" opacity=".55"/>
+  <ellipse cx="158" cy="130" rx="11" ry="6.5" fill="#f2a98a" opacity=".55"/>
+  <!-- tongue, nose, mouth -->
+  <ellipse cx="100" cy="153" rx="6.5" ry="5.5" fill="#ee8b8b"/>
+  <path d="M89 125 h22 c0 7.5 -6 12 -11 12 c-5 0 -11 -4.5 -11 -12 z" fill="#3d2616"/>
+  <path d="M100 137 v7 M100 144 c-4 6 -12 6 -16 1 M100 144 c4 6 12 6 16 1" fill="none" stroke="#3d2616" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

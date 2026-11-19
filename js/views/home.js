@@ -22,14 +22,14 @@ export function render(root) {
   const toInvest = sum(txs.filter((t) => isTransfer(t) && t.type === 'expense'), (t) => t.amount);
   const fromInvest = sum(txs.filter((t) => isTransfer(t) && t.type === 'income'), (t) => t.amount);
 
-  const mood = !txs.length ? "Oink! Let's add your first entry ✨"
-    : balance >= 0 ? `Yay! You're keeping ${money(balance, currency)} this month 🌸`
+  const mood = !txs.length ? "Woof! Let's add your first entry 🐾"
+    : balance >= 0 ? `Yay! You're keeping ${money(balance, currency)} this month 🐕`
     : "A little over this month. You've got this! 💪";
 
   root.append(
     monthNav(() => window.dispatchEvent(new HashChangeEvent('hashchange'))),
     h('div', { class: 'card hero' },
-      h('img', { src: 'icons/mascot.svg', alt: 'Piggy mascot' }),
+      h('img', { src: 'icons/mascot.svg', alt: 'Shiba mascot' }),
       h('div', { class: 'bubble grow' }, mood)),
     h('div', { class: 'card' },
       h('div', { class: 'muted' }, 'Left over (income − spending)'),
@@ -58,7 +58,7 @@ export function render(root) {
   const firstDate = s.transactions.reduce((m, t) => (!m || t.date < m ? t.date : m), '');
   const firstKey = firstDate ? periodKeyFor(firstDate, startDay) : null;
   const keys = Array.from({ length: MONTHS_SHOWN }, (_, i) => shiftKey(active, i - (MONTHS_SHOWN - 1))).filter((k) => firstKey && k >= firstKey);
-  const monthlyCard = h('div', { class: 'card' }, h('h2', {}, '📊 Monthly spending'));
+  const monthlyCard = h('div', { class: 'card' }, h('h2', {}, '🪀 Monthly spending'));
   if (!keys.length) {
     monthlyCard.append(empty('Add a few entries to see your month-by-month spending.'));
   } else if (typeof Chart !== 'undefined') {
@@ -78,7 +78,7 @@ export function render(root) {
       data: {
         labels,
         datasets: [
-          { type: 'bar', label: 'Spent', data: values, borderRadius: 8, backgroundColor: keys.map((k) => (k === active ? cssVar('--brand') : '#ffb3c8')), order: 2 },
+          { type: 'bar', label: 'Spent', data: values, borderRadius: 8, backgroundColor: keys.map((k) => (k === active ? cssVar('--brand') : '#e9c9a0')), order: 2 },
           { type: 'line', label: avgLabel, data: values.map(() => avg), borderColor: cssVar('--text'), borderDash: [6, 5], borderWidth: 2, pointRadius: 0, fill: false, order: 1 },
         ],
       },
@@ -102,7 +102,7 @@ export function render(root) {
   const byCat = {};
   spent.forEach((t) => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
   const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-  const chartCard = h('div', { class: 'card' }, h('h2', {}, '🍩 Spending by category'));
+  const chartCard = h('div', { class: 'card' }, h('h2', {}, '🎾 Spending by category'));
   if (!cats.length) {
     chartCard.append(empty('No spending in this period yet. Tap + to add one.'));
   } else if (typeof Chart !== 'undefined') {
@@ -117,7 +117,7 @@ export function render(root) {
   root.append(chartCard);
 
   const recent = [...txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
-  root.append(h('div', { class: 'card' }, h('h2', {}, '🧾 Recent'),
+  root.append(h('div', { class: 'card' }, h('h2', {}, '🦴 Recent'),
     recent.length ? recent.map(txRow) : empty('Nothing recorded yet.'),
     recent.length ? h('a', { href: '#/history', class: 'muted' }, 'See all →') : null));
 
