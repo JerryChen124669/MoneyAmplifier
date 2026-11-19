@@ -9,21 +9,32 @@ export const TYPE_EMOJI = { Stock: '📈', ETF: '🧺', Bond: '🏛️', Fund: '
 
 /** Expenses in this category are purchases: they also create/increase a holding on the Invest page. */
 export const INVEST_CATEGORY = '📈 Investment';
+/** Income in this category is a cash-out: money coming back from a holding on the Invest page. */
+export const INVEST_OUT_CATEGORY = '💵 Investment cash-out';
 const OLD_INTEREST = '📈 Investments'; // income category renamed to Interest
 const INTEREST = '📈 Interest';
 
+/** Buying into / cashing out of an investment moves money between cash and investments; it is not spending or earning. */
+export const isTransfer = (t) =>
+  (t.type === 'expense' && t.category === INVEST_CATEGORY) || (t.type === 'income' && t.category === INVEST_OUT_CATEGORY);
+/** Auto-priced holding: has a ticker and a number of shares/units, so its value = shares × latest price. */
+export const isAuto = (i) => !!i.ticker && i.shares > 0;
+
 export const defaults = () => ({
   version: 2,
-  settings: { currency: 'TWD', startDay: 1 },
+  settings: { currency: 'TWD', startDay: 1, autoPrices: true, twelveKey: '', lastPriceRefresh: '' },
   categories: {
     expense: ['🍜 Food', '🛒 Groceries', '🚌 Transport', '🏠 Housing', '💡 Utilities', '🎬 Fun',
       '👕 Shopping', '💊 Health', '📚 Learning', '🎁 Gifts', '✈️ Travel', INVEST_CATEGORY, '📦 Other'],
-    income: ['💼 Salary', '🎯 Bonus', INTEREST, '💰 Other income'],
+    income: ['💼 Salary', '🎯 Bonus', INTEREST, INVEST_OUT_CATEGORY, '💰 Other income'],
   },
-  // daily account: { id, date, type: 'expense'|'income', amount, category, note, investId? }
-  // investId = the Invest-page holding this purchase went into (only for the Investment category)
+  // daily account: { id, date, type: 'expense'|'income', amount, category, note, investId?, holdValue?, shares? }
+  // investId = the holding on the Invest page this purchase / cash-out belongs to (Investment / cash-out categories only);
+  // holdValue = how much the holding's value went up (purchase) or down (cash-out); shares = units bought / sold.
   transactions: [],
-  investments: [],   // { id, name, type, institution, amount (current value), updated }
+  // { id, name, type, institution, amount (current value), updated, ticker, shares, priceCur, price, priceDate }
+  investments: [],
+  valueLog: [],      // total investment value per day: { date, invest } (feeds the Net worth chart)
   profile: { openingCash: 0, debts: 0 }, // daily-account starting balance + total debts, used for net worth
   netWorth: [],      // monthly snapshots: { id, month: 'YYYY-MM', cash, invest, debts }
 });
@@ -37,12 +48,15 @@ const str = (v, max = 80) => String(v ?? '').slice(0, max);
 export function sanitize(raw) {
   if (!raw || typeof raw !== 'object') throw new Error('Not a MoneyAmplifier backup.');
   const d = defaults();
-  const out = { ...d, settings: { ...d.settings }, categories: { ...d.categories }, profile: { ...d.profile }, transactions: [], investments: [], netWorth: [] };
+  const out = { ...d, settings: { ...d.settings }, categories: { ...d.categories }, profile: { ...d.profile }, transactions: [], investments: [], valueLog: [], netWorth: [] };
 
   const s = raw.settings || {};
   if (typeof s.currency === 'string' && /^[A-Z]{3}$/.test(s.currency)) out.settings.currency = s.currency;
   const sd = Math.round(num(s.startDay));
   if (sd >= 1 && sd <= 31) out.settings.startDay = sd;
+  if (typeof s.autoPrices === 'boolean') out.settings.autoPrices = s.autoPrices;
+  if (typeof s.twelveKey === 'string' && /^[\w-]{0,80}$/.test(s.twelveKey)) out.settings.twelveKey = s.twelveKey;
+  if (isDate(s.lastPriceRefresh)) out.settings.lastPriceRefresh = s.lastPriceRefresh;
 
   for (const t of ['expense', 'income']) {
     const list = raw.categories && Array.isArray(raw.categories[t]) ? raw.categories[t] : null;
@@ -51,13 +65,18 @@ export function sanitize(raw) {
   // migrations: income "Investments" -> "Interest"; the Investment expense category must always exist
   out.categories.income = [...new Set(out.categories.income.map((c) => (c === OLD_INTEREST ? INTEREST : c)))];
   if (!out.categories.expense.includes(INVEST_CATEGORY)) out.categories.expense.push(INVEST_CATEGORY);
+  if (!out.categories.income.includes(INVEST_OUT_CATEGORY)) out.categories.income.push(INVEST_OUT_CATEGORY);
   for (const t of Array.isArray(raw.transactions) ? raw.transactions : []) {
     const amount = num(t && t.amount);
     if (!t || !isDate(t.date) || !(t.type === 'expense' || t.type === 'income') || !(amount > 0)) continue;
     let category = str(t.category, 40);
     if (t.type === 'income' && category === OLD_INTEREST) category = INTEREST;
     const rec = { id: str(t.id, 40) || uid(), date: t.date, type: t.type, amount, category, note: str(t.note, 200) };
-    if (t.type === 'expense' && category === INVEST_CATEGORY && t.investId) rec.investId = str(t.investId, 40);
+    if (isTransfer(rec) && t.investId) {
+      rec.investId = str(t.investId, 40);
+      if (num(t.holdValue) >= 0) rec.holdValue = num(t.holdValue);
+      if (num(t.shares) > 0) rec.shares = num(t.shares);
+    }
     out.transactions.push(rec);
   }
   for (const i of Array.isArray(raw.investments) ? raw.investments : []) {
@@ -69,8 +88,17 @@ export function sanitize(raw) {
       type: INVEST_TYPES.includes(i.type) ? i.type : 'Other',
       institution: str(i.institution, 60).trim(),
       updated: isDate(i.updated) ? i.updated : today(),
+      ticker: str(i.ticker, 30).trim(),
+      shares: num(i.shares) > 0 ? num(i.shares) : 0,
+      priceCur: typeof i.priceCur === 'string' && /^[A-Z]{3}$/.test(i.priceCur) ? i.priceCur : '',
+      price: num(i.price) > 0 ? num(i.price) : 0,
+      priceDate: isDate(i.priceDate) ? i.priceDate : '',
     });
   }
+  for (const v of Array.isArray(raw.valueLog) ? raw.valueLog : []) {
+    if (v && isDate(v.date) && num(v.invest) >= 0) out.valueLog.push({ date: v.date, invest: num(v.invest) });
+  }
+  out.valueLog.sort((a, b) => a.date.localeCompare(b.date));
   const p = raw.profile || {};
   if (Number.isFinite(num(p.openingCash))) out.profile.openingCash = num(p.openingCash);
   if (num(p.debts) >= 0) out.profile.debts = num(p.debts);
@@ -100,6 +128,22 @@ function load() {
 let state = load();
 const listeners = new Set();
 
+/** Keep one {date, invest} entry per day with the total investment value (for the Net worth chart). */
+function stampValue(st) {
+  if (!st.investments.length && !st.valueLog.length) return false;
+  const total = Math.round(st.investments.reduce((a, i) => a + i.amount, 0) * 100) / 100;
+  const d = today();
+  const last = st.valueLog[st.valueLog.length - 1];
+  if (last && last.date === d) {
+    if (last.invest === total) return false;
+    last.invest = total;
+    return true;
+  }
+  st.valueLog.push({ date: d, invest: total });
+  if (st.valueLog.length > 1500) st.valueLog.splice(0, st.valueLog.length - 1500);
+  return true;
+}
+
 export const getState = () => state;
 export const subscribe = (fn) => (listeners.add(fn), () => listeners.delete(fn));
 
@@ -114,12 +158,16 @@ function save() {
 /** Change the state: update(s => { s.transactions.push(...) }). Pass {silent:true} to skip re-rendering. */
 export function update(fn, { silent = false } = {}) {
   fn(state);
+  stampValue(state);
   save();
   if (!silent) listeners.forEach((f) => f());
 }
 
+if (stampValue(state)) save();
+
 export function replaceAll(newState) {
   state = sanitize(newState);
+  stampValue(state);
   save();
   listeners.forEach((f) => f());
 }
@@ -135,38 +183,77 @@ export function netWorthNow(s = state) {
   return { cash, invest, debts, net: cash + invest - debts };
 }
 
-// ---- buying investments through the Expense form ----
-// Cash goes down (the expense) and the holding goes up by the same amount, so net worth stays the same.
+// ---- moving money between cash and investments ----
+// A purchase is an Expense (cash goes down) that raises a holding by the same amount; a cash-out is an Income
+// (cash goes up) that lowers the holding. Both are stored as normal transactions linked to the holding, so they show
+// up in History / Home, and editing or deleting them puts the holding back the way it was.
 const round = (v) => Math.round(v * 1e6) / 1e6;
 
-/** Inside update(): add `amount` to an existing holding ({id}) or create a new one ({name,type,institution}). Returns its id. */
-export function buyHolding(st, pick, amount) {
-  let hold = pick.id && st.investments.find((i) => i.id === pick.id);
-  if (hold) {
-    hold.amount = round(hold.amount + amount);
-    hold.updated = today();
-  } else {
+function adjustHolding(hold, dValue, dShares) {
+  hold.amount = Math.max(0, round(hold.amount + dValue));
+  if (dShares || hold.shares) hold.shares = Math.max(0, round((hold.shares || 0) + dShares));
+  hold.updated = today();
+}
+
+/** Inside update(): reverse what a linked transaction did to its holding (no-op if the holding was deleted). */
+export function undoInvest(st, t) {
+  const hold = t.investId && st.investments.find((i) => i.id === t.investId);
+  if (!hold) return;
+  const dir = t.type === 'expense' ? -1 : 1;
+  adjustHolding(hold, dir * (t.holdValue ?? t.amount), dir * (t.shares || 0));
+}
+
+/**
+ * Inside update(): apply `link` ({ pick, holdValue, shares }) for transaction `rec` and tag `rec` with the holding.
+ * pick = { id } for an existing holding, or { name, type, institution, ticker } to create one (purchases only).
+ */
+function applyInvest(st, rec, link) {
+  let hold = link.pick.id && st.investments.find((i) => i.id === link.pick.id);
+  if (!hold) {
+    if (rec.type !== 'expense') return;
+    const type = INVEST_TYPES.includes(link.pick.type) ? link.pick.type : 'Other';
     hold = {
-      id: uid(), name: str(pick.name, 60).trim(), amount: round(amount), updated: today(),
-      type: INVEST_TYPES.includes(pick.type) ? pick.type : 'Other', institution: str(pick.institution, 60).trim(),
+      id: uid(), name: str(link.pick.name, 60).trim(), type, institution: str(link.pick.institution, 60).trim(),
+      amount: 0, updated: today(), ticker: str(link.pick.ticker, 30).trim(), shares: 0, priceCur: '', price: 0, priceDate: '',
     };
     st.investments.push(hold);
   }
-  return hold.id;
-}
-/** Inside update(): take a purchase transaction's amount back out of its holding. */
-export function undoBuy(st, t) {
-  const hold = t.investId && st.investments.find((i) => i.id === t.investId);
-  if (!hold) return;
-  hold.amount = Math.max(0, round(hold.amount - t.amount));
-  hold.updated = today();
-}
-/** Inside update(): drop holdings (from `ids`) that are now empty and have no purchase left pointing at them. */
-export function pruneHoldings(st, ids) {
-  st.investments = st.investments.filter((i) => !ids.includes(i.id) || i.amount > 0 || st.transactions.some((t) => t.investId === i.id));
+  let value = link.holdValue, shares = link.shares || 0;
+  if (rec.type === 'income') { value = Math.min(value, hold.amount); shares = Math.min(shares, hold.shares || 0); } // can't sell more than is held
+  const dir = rec.type === 'expense' ? 1 : -1;
+  adjustHolding(hold, dir * value, dir * shares);
+  rec.investId = hold.id;
+  rec.holdValue = value;
+  if (shares > 0) rec.shares = shares; else delete rec.shares;
 }
 
-export const exportJSON =() => JSON.stringify(state, null, 2);
+/** Inside update(): drop holdings (from `ids`) that are empty and that no transaction points at any more. */
+function pruneHoldings(st, ids) {
+  st.investments = st.investments.filter((i) => !ids.includes(i.id) || i.amount > 0 || (i.shares || 0) > 0 || st.transactions.some((t) => t.investId === i.id));
+}
+
+/**
+ * Inside update(): save transaction `rec` (replacing `existing` if editing), keeping the Invest page in step.
+ * `link` is null for ordinary entries, or { pick, holdValue, shares } for a purchase / cash-out.
+ */
+export function commitTx(st, rec, existing, link) {
+  const touched = [];
+  if (existing && existing.investId) { undoInvest(st, existing); touched.push(existing.investId); }
+  delete rec.investId; delete rec.holdValue; delete rec.shares;
+  if (link) applyInvest(st, rec, link);
+  if (existing) st.transactions[st.transactions.findIndex((t) => t.id === existing.id)] = rec;
+  else st.transactions.push(rec);
+  pruneHoldings(st, touched);
+}
+
+/** Inside update(): delete a transaction and take its effect back out of the holding. */
+export function removeTx(st, t) {
+  st.transactions = st.transactions.filter((x) => x.id !== t.id);
+  if (t.investId) { undoInvest(st, t); pruneHoldings(st, [t.investId]); }
+}
+
+// backups never include the price-service key
+export const exportJSON = () => JSON.stringify({ ...state, settings: { ...state.settings, twelveKey: '' } }, null, 2);
 
 function csv(rows) {
   const safe = (v) => {

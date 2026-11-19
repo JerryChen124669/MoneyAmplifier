@@ -1,6 +1,6 @@
 // Settings: currency, billing-period start day, categories, backup / restore.
 import { h, download, today } from '../util.js';
-import { getState, update, replaceAll, exportJSON, exportCSV, exportInvestmentsCSV, defaults, INVEST_CATEGORY } from '../store.js';
+import { getState, update, replaceAll, exportJSON, exportCSV, exportInvestmentsCSV, defaults, INVEST_CATEGORY, INVEST_OUT_CATEGORY } from '../store.js';
 import { toast } from '../components.js';
 
 export const title = 'Settings';
@@ -22,8 +22,8 @@ export function render(root) {
       s.categories[type].map((c) => h('div', { class: 'row', style: 'padding:6px 0;border-bottom:1px solid var(--line)' },
         h('div', { class: 'grow' }, c),
         // the Investment category is what links purchases to the Invest page, so it stays fixed
-        c === INVEST_CATEGORY && type === 'expense'
-          ? h('span', { class: 'muted' }, '🔒 feeds Invest page')
+        (c === INVEST_CATEGORY && type === 'expense') || (c === INVEST_OUT_CATEGORY && type === 'income')
+          ? h('span', { class: 'muted' }, '🔒 linked to Invest page')
           : [h('button', { 'aria-label': `Rename ${c}`, onClick: () => rename(type, c) }, 'Rename'),
             h('button', { class: 'btn-danger', 'aria-label': `Delete ${c}`, onClick: () => removeCat(type, c) }, '×')])),
       h('div', { class: 'row', style: 'margin-top:10px' }, input, h('button', { onClick: add }, 'Add')));
@@ -62,6 +62,20 @@ export function render(root) {
         h('input', {
           type: 'number', min: '1', max: '31', value: s.settings.startDay,
           onChange: (e) => { const v = Math.min(31, Math.max(1, parseInt(e.target.value) || 1)); update((st) => { st.settings.startDay = v; }); },
+        }))),
+    h('div', { class: 'card stack' }, h('h2', {}, 'Investment prices'),
+      h('p', { class: 'muted', style: 'margin:0' }, 'Holdings with a ticker and a number of shares are re-priced once a day when you open the app. Crypto needs nothing (CoinGecko). Stocks and ETFs need a free key from twelvedata.com. The key stays on this device and is left out of backups. Only the ticker is sent, never your amounts.'),
+      h('label', { class: 'check' },
+        h('input', { type: 'checkbox', checked: s.settings.autoPrices, onChange: (e) => update((st) => { st.settings.autoPrices = e.target.checked; }, { silent: true }) }),
+        h('span', {}, 'Update prices automatically once a day')),
+      h('label', { class: 'field' }, 'Twelve Data key (for stocks / ETFs)',
+        h('input', {
+          type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', maxlength: '80', value: s.settings.twelveKey,
+          onChange: (e) => {
+            const v = e.target.value.trim();
+            if (!/^[\w-]{0,80}$/.test(v)) return toast('That does not look like a key');
+            update((st) => { st.settings.twelveKey = v; }, { silent: true }); toast('Saved! ✨');
+          },
         }))),
     categoryCard('expense', 'Expense categories'),
     categoryCard('income', 'Income categories'),

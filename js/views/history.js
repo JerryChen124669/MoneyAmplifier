@@ -2,8 +2,8 @@
 // Filter by type (expense / income) and category, search, and group by day or by category.
 // Picking Expenses or Income shows a doughnut chart of what the money was made of.
 import { h, money, sum, periodRange, dayLabel } from '../util.js';
-import { getState } from '../store.js';
-import { monthNav, txRow, txNote, empty, activePeriod, donut } from '../components.js';
+import { getState, isTransfer } from '../store.js';
+import { monthNav, txRow, txNote, flowText, empty, activePeriod, donut } from '../components.js';
 
 export const title = 'History';
 
@@ -57,10 +57,14 @@ export function render(root) {
         chart.el));
     }
 
+    // income / spent leave out money moved to or from investments; that is shown on its own
+    const flowIn = sum(rows.filter((t) => isTransfer(t) && t.type === 'expense'), (t) => t.amount);
+    const flowOut = sum(rows.filter((t) => isTransfer(t) && t.type === 'income'), (t) => t.amount);
     summary.replaceChildren(rows.length ? h('div', { class: 'muted', style: 'margin:4px 8px' },
       `${rows.length} entr${rows.length === 1 ? 'y' : 'ies'} · ` +
-      `income ${money(sum(rows.filter((t) => t.type === 'income'), (t) => t.amount), currency)} · ` +
-      `spent ${money(sum(rows.filter((t) => t.type === 'expense'), (t) => t.amount), currency)}`) : '');
+      `income ${money(sum(rows.filter((t) => t.type === 'income' && !isTransfer(t)), (t) => t.amount), currency)} · ` +
+      `spent ${money(sum(rows.filter((t) => t.type === 'expense' && !isTransfer(t)), (t) => t.amount), currency)}` +
+      (flowIn || flowOut ? ` · to invest ${money(flowIn, currency)} · cashed out ${money(flowOut, currency)}` : '')) : '');
 
     if (!rows.length) return list.replaceChildren(empty(inPeriod.length ? 'No matches.' : 'No entries in this period.'));
 
@@ -76,9 +80,13 @@ export function render(root) {
             h('span', {}, `${cat} · ${Math.round((gross / grand) * 100)}%`),
             h('span', {}, money(net, currency))),
           h('div', { class: 'card', style: 'padding:4px 16px;margin-bottom:0' },
-            items.map((t) => h('a', { class: 'tx', href: `#/add/${t.id}` },
-              h('div', { class: 'grow' }, h('div', { class: 'name' }, dayLabel(t.date)), txNote(t) ? h('div', { class: 'muted' }, txNote(t)) : null),
-              h('div', { class: `amt ${t.type}` }, (t.type === 'income' ? '+' : '−') + money(t.amount, currency))))))));
+            items.map((t) => isTransfer(t)
+              ? h('a', { class: 'tx transfer', href: `#/add/${t.id}` },
+                h('div', { class: 'grow name' }, `${dayLabel(t.date)} · ${flowText(t)}`),
+                h('div', { class: 'amt flow' }, (t.type === 'income' ? '+' : '−') + money(t.amount, currency)))
+              : h('a', { class: 'tx', href: `#/add/${t.id}` },
+                h('div', { class: 'grow' }, h('div', { class: 'name' }, dayLabel(t.date)), txNote(t) ? h('div', { class: 'muted' }, txNote(t)) : null),
+                h('div', { class: `amt ${t.type}` }, (t.type === 'income' ? '+' : '−') + money(t.amount, currency))))))));
       return;
     }
 

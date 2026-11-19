@@ -148,6 +148,29 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .tx-btn { width: 100%; background: transparent; border: 0; border-bottom: 1.5px dashed var(--line); border-radius: 0; padding: 12px 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .tx-btn:active { transform: none; opacity: .7; }
 .tx-btn:last-child { border-bottom: 0; }
+.tx-btn.sold-out { opacity: .55; }
+
+/* money moving between cash and an investment: one wide, tinted line */
+.tx.transfer { background: var(--brand-soft); border-radius: 14px; border-bottom: 0; margin: 6px -10px; padding: 11px 12px; }
+.tx.transfer .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx .amt.flow { color: var(--brand); }
+
+label.check { display: flex; gap: 10px; align-items: flex-start; font-size: .85rem; font-weight: 600; color: var(--muted); }
+label.check input { width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: var(--brand); }
+details.more { border: 1.5px dashed var(--line); border-radius: 16px; padding: 10px 14px; }
+details.more summary { cursor: pointer; font-weight: 800; color: var(--brand); }
+
+/* Net worth: cash and investment charts side by side on wide screens, one at a time (with a switch) on phones */
+.pair-toggle { margin-bottom: 12px; }
+.pair { display: grid; gap: 14px; }
+.pair .pane { display: none; }
+.pair .pane.on { display: block; }
+@media (min-width: 760px) {
+  .pair { grid-template-columns: 1fr 1fr; }
+  .pair .pane { display: block; }
+  .pair-toggle { display: none; }
+  #view.wide { max-width: 920px; }
+}
 
 #toast {
   position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 28px); transform: translate(-50%, 20px);

@@ -1,5 +1,5 @@
 // Shared UI pieces used by several views.
-import { h, money, sum, periodKeyFor, periodLabel, shiftKey, today } from './util.js';import { getState } from './store.js';
+import { h, money, sum, periodKeyFor, periodLabel, shiftKey, today } from './util.js';import { getState, isTransfer } from './store.js';
 
 /** Which month/period the Home and History tabs are showing (kept while you switch tabs). */
 export const ui = { period: null };
@@ -65,16 +65,25 @@ function openMonthPicker(onChange) {
   if (on) on.focus();
 }
 
-/** Second line of a transaction row: the note, or for an investment purchase the holding it went into. */
-export function txNote(t) {
-  if (t.note) return t.note;
+/** Second line of an ordinary transaction row: its note. */
+export const txNote = (t) => t.note || '';
+
+/** "💰 Cash → 📈 TSMC" (purchase) or "📈 TSMC → 💰 Cash" (cash-out): one line for money moving between cash and an investment. */
+export function flowText(t) {
   const hold = t.investId && getState().investments.find((i) => i.id === t.investId);
-  return hold ? `→ ${hold.name}` : '';
+  const name = hold ? hold.name : 'Investment';
+  return t.type === 'expense' ? `💰 Cash → 📈 ${name}` : `📈 ${name} → 💰 Cash`;
 }
 
 export function txRow(t) {
   const { currency } = getState().settings;
   const sign = t.type === 'income' ? '+' : '−';
+  if (isTransfer(t)) {
+    // investment money flow: a single wide line instead of the usual two-line row
+    return h('a', { class: 'tx transfer', href: `#/add/${t.id}` },
+      h('div', { class: 'grow name' }, flowText(t), t.note ? h('span', { class: 'muted' }, ` · ${t.note}`) : null),
+      h('div', { class: 'amt flow' }, sign + money(t.amount, currency)));
+  }
   const note = txNote(t);
   return h('a', { class: 'tx', href: `#/add/${t.id}` },
     h('div', { class: 'grow' },

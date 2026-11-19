@@ -9,6 +9,7 @@ Personal money tracker (daily spending, investments, net worth). A static web ap
 | `css/styles.css` | All styling. Colours are variables at the top (light + dark mode) |
 | `js/app.js` | Router: maps `#/home`, `#/add`, … to a view module |
 | `js/store.js` | The data model, saving, import/export. **Add new data fields here** |
+| `js/prices.js` | Daily automatic prices (CoinGecko for crypto, Twelve Data key for stocks) |
 | `js/util.js`, `js/components.js` | Helpers and shared UI bits |
 | `js/views/*.js` | One file per page: home, add, history, invest, wealth (net worth), settings |
 | `sw.js` + `manifest.webmanifest` | Offline support and home-screen install |

@@ -1,33 +1,50 @@
-// Add / edit a transaction. #/add = new, #/add/<id> = edit existing.
-// Expenses in the "Investment" category are purchases: they also feed a holding on the Invest page.
-import { h, uid, today } from '../util.js';
-import { getState, update, INVEST_CATEGORY, INVEST_TYPES, TYPE_EMOJI, buyHolding, undoBuy, pruneHoldings } from '../store.js';
+// Add / edit a transaction. #/add = new, #/add/<id> = edit existing,
+// #/add/buy-<holdingId> and #/add/sell-<holdingId> = buy more of / cash out of a holding (links from the Invest page).
+// Expenses in the "Investment" category and income in the "Investment cash-out" category move money between
+// the daily account and a holding on the Invest page, so both pages always stay in step.
+import { h, uid, today, money } from '../util.js';
+import { getState, update, INVEST_CATEGORY, INVEST_OUT_CATEGORY, INVEST_TYPES, TYPE_EMOJI, commitTx, removeTx } from '../store.js';
 import { toast } from '../components.js';
 
 export const title = 'Add';
 
+const numOf = (v) => parseFloat(String(v ?? '').replace(/,/g, ''));
+
 export function render(root, id) {
   const s = getState();
-  const existing = id ? s.transactions.find((t) => t.id === id) : null;
+  const { currency } = s.settings;
+  const preset = /^(buy|sell)-/.test(id || '') ? id.split('-')[0] : null;
+  const presetHolding = preset ? id.slice(preset.length + 1) : null;
+  const existing = id && !preset ? s.transactions.find((t) => t.id === id) : null;
+
   const form = existing
     ? { ...existing, amount: String(existing.amount) }
     : { type: 'expense', amount: '', category: '', date: today(), note: '' };
-  // which holding a purchase goes into: 'new' or an existing holding's id
-  const blankHolding = () => ({ holding: 'new', hName: '', hType: 'Stock', hInst: '' });
-  Object.assign(form, blankHolding());
-  if (existing && existing.investId && s.investments.some((i) => i.id === existing.investId)) form.holding = existing.investId;
+  Object.assign(form, { holding: 'new', hName: '', hType: 'Stock', hInst: '', hTicker: '', shares: '', removed: '' });
+  if (existing && existing.investId) {
+    if (s.investments.some((i) => i.id === existing.investId)) form.holding = existing.investId;
+    if (existing.shares) form.shares = String(existing.shares);
+    if (existing.type === 'income' && existing.holdValue != null) form.removed = String(existing.holdValue);
+  }
+  if (preset && s.investments.some((i) => i.id === presetHolding)) {
+    form.type = preset === 'buy' ? 'expense' : 'income';
+    form.category = preset === 'buy' ? INVEST_CATEGORY : INVEST_OUT_CATEGORY;
+    form.holding = presetHolding;
+  }
 
   const isBuy = () => form.type === 'expense' && form.category === INVEST_CATEGORY;
+  const isSell = () => form.type === 'income' && form.category === INVEST_OUT_CATEGORY;
+  const holdLabel = (i) => `${TYPE_EMOJI[i.type]} ${i.name}${i.institution ? ' · ' + i.institution : ''}`;
 
-  function holdingCard() {
+  function buyCard() {
     const institutions = [...new Set(s.investments.map((i) => i.institution).filter(Boolean))];
     return h('div', { class: 'card stack' },
-      h('h2', {}, '📈 Goes to the Invest page'),
+      h('h2', {}, '📈 Cash in: goes to the Invest page'),
       h('p', { class: 'muted', style: 'margin:0' }, 'Your daily account goes down and the holding goes up by the same amount, so your net worth stays the same.'),
       h('label', { class: 'field' }, 'Holding',
         h('select', { value: form.holding, onChange: (e) => { form.holding = e.target.value; draw(); } },
           h('option', { value: 'new' }, '＋ New holding'),
-          s.investments.map((i) => h('option', { value: i.id }, `${TYPE_EMOJI[i.type]} ${i.name}${i.institution ? ' · ' + i.institution : ''}`)))),
+          s.investments.map((i) => h('option', { value: i.id }, holdLabel(i))))),
       form.holding === 'new' ? [
         h('label', { class: 'field' }, 'Name (e.g. TSMC, 0050, US Treasury 10Y)', h('input', { type: 'text', maxlength: '60', value: form.hName, onInput: (e) => { form.hName = e.target.value; } })),
         h('label', { class: 'field' }, 'Type',
@@ -35,14 +52,36 @@ export function render(root, id) {
         h('label', { class: 'field' }, 'Institution managing it (bank, broker, fund company…)',
           h('input', { type: 'text', maxlength: '60', list: 'add-institutions', value: form.hInst, onInput: (e) => { form.hInst = e.target.value; } }),
           h('datalist', { id: 'add-institutions' }, institutions.map((i) => h('option', { value: i })))),
-      ] : null);
+        h('label', { class: 'field' }, 'Ticker (optional, for automatic price updates: AAPL, VOO, or bitcoin for crypto)',
+          h('input', { type: 'text', maxlength: '30', autocapitalize: 'off', value: form.hTicker, onInput: (e) => { form.hTicker = e.target.value; } })),
+      ] : null,
+      h('label', { class: 'field' }, 'Shares / units bought (optional)',
+        h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: form.shares, onInput: (e) => { form.shares = e.target.value; } })));
+  }
+
+  function sellCard() {
+    if (!s.investments.length) return h('div', { class: 'card' }, h('p', { class: 'muted', style: 'margin:0' }, 'You have no holdings on the Invest page to cash out of yet.'));
+    if (form.holding === 'new') form.holding = s.investments[0].id;
+    const hold = s.investments.find((i) => i.id === form.holding);
+    return h('div', { class: 'card stack' },
+      h('h2', {}, '💵 Cash out: comes from the Invest page'),
+      h('p', { class: 'muted', style: 'margin:0' }, 'The amount above is the cash you received. It goes into your daily account, and the value below comes off the holding. If you got more than it was worth, the difference is your profit.'),
+      h('label', { class: 'field' }, 'Holding',
+        h('select', { value: form.holding, onChange: (e) => { form.holding = e.target.value; draw(); } },
+          s.investments.map((i) => h('option', { value: i.id }, `${holdLabel(i)} (${money(i.amount, currency)})`)))),
+      h('label', { class: 'field' }, 'Value taken off the holding (blank = same as the amount received)',
+        h('div', { class: 'row' },
+          h('input', { type: 'text', inputmode: 'decimal', placeholder: String(form.amount || '0'), style: 'margin:0', value: form.removed, onInput: (e) => { form.removed = e.target.value; } }),
+          h('button', { type: 'button', onClick: () => { form.removed = String(hold.amount); draw(); } }, 'All'))),
+      hold && hold.shares > 0 ? h('label', { class: 'field' }, `Shares / units sold (blank = in proportion; you hold ${hold.shares})`,
+        h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: form.shares, onInput: (e) => { form.shares = e.target.value; } })) : null);
   }
 
   function draw() {
     const cats = [...s.categories[form.type]];
     if (form.category && !cats.includes(form.category)) cats.push(form.category); // keep a since-deleted category visible
     const amountEl = h('input', {
-      class: 'amount-input', type: 'text', inputmode: 'decimal', placeholder: '0', value: form.amount, 'aria-label': 'Amount',
+      class: 'amount-input', type: 'text', inputmode: 'decimal', placeholder: '0', value: form.amount, 'aria-label': isSell() ? 'Amount received' : 'Amount',
       onInput: (e) => { form.amount = e.target.value; },
     });
     root.replaceChildren(h('div', { class: 'stack' },
@@ -57,7 +96,7 @@ export function render(root, id) {
           class: `chip ${form.category === c ? 'on' : ''}`,
           onClick: () => { form.category = c; draw(); },
         }, c)))),
-      isBuy() ? holdingCard() : null,
+      isBuy() ? buyCard() : isSell() ? sellCard() : null,
       h('div', { class: 'card stack' },
         h('label', { class: 'field' }, 'Date', h('input', { type: 'date', value: form.date, onChange: (e) => { form.date = e.target.value; } })),
         h('label', { class: 'field' }, 'Note (optional)', h('input', { type: 'text', maxlength: '200', value: form.note, onInput: (e) => { form.note = e.target.value; } }))),
@@ -67,39 +106,49 @@ export function render(root, id) {
   }
 
   function save() {
-    const amount = parseFloat(String(form.amount).replace(/,/g, ''));
+    const amount = numOf(form.amount);
     if (!(amount > 0)) return toast('Enter an amount greater than 0');
     if (!form.category) return toast('Pick a category');
     if (!form.date) return toast('Pick a date');
-    const buy = isBuy();
-    if (buy && form.holding === 'new' && !form.hName.trim()) return toast('Name what you bought, e.g. TSMC');
     const record = { id: existing ? existing.id : uid(), type: form.type, amount, category: form.category, date: form.date, note: form.note.trim() };
-    update((st) => {
-      const touched = [];
-      if (existing && existing.investId) { undoBuy(st, existing); touched.push(existing.investId); } // take the old purchase back out first
-      if (buy) {
-        record.investId = buyHolding(st, form.holding === 'new' ? { name: form.hName, type: form.hType, institution: form.hInst } : { id: form.holding }, amount);
-      }
-      if (existing) st.transactions[st.transactions.findIndex((t) => t.id === existing.id)] = record;
-      else st.transactions.push(record);
-      pruneHoldings(st, touched);
-    }, { silent: true });
-    toast(buy ? 'Saved! Added to Invest ✨' : 'Saved! ✨');
+    let link = null;
+    if (isBuy()) {
+      if (form.holding === 'new' && !form.hName.trim()) return toast('Name what you bought, e.g. TSMC');
+      const shares = numOf(form.shares);
+      link = {
+        pick: form.holding === 'new' ? { name: form.hName, type: form.hType, institution: form.hInst, ticker: form.hTicker } : { id: form.holding },
+        holdValue: amount, shares: shares > 0 ? shares : 0,
+      };
+    } else if (isSell()) {
+      const hold = s.investments.find((i) => i.id === form.holding);
+      if (!hold) return toast('Pick the holding you cashed out of');
+      // when editing, the old cash-out is put back first, so allow up to value + what it took off
+      const room = hold.amount + (existing && existing.investId === hold.id ? existing.holdValue ?? existing.amount : 0);
+      const removed = Math.min(form.removed.trim() ? numOf(form.removed) : amount, room);
+      if (!(removed > 0)) return toast('Nothing left in that holding to take off');
+      const heldShares = hold.shares + (existing && existing.investId === hold.id ? existing.shares || 0 : 0);
+      let shares = numOf(form.shares);
+      if (!(shares > 0)) shares = heldShares > 0 && room > 0 ? heldShares * Math.min(1, removed / room) : 0;
+      link = { pick: { id: hold.id }, holdValue: removed, shares };
+    }
+    update((st) => commitTx(st, record, existing, link), { silent: true });
+    toast(link ? (isBuy() ? 'Saved! Added to Invest ✨' : 'Saved! Taken off Invest ✨') : 'Saved! ✨');
     if (existing) location.hash = '#/history';
-    else { form.amount = ''; form.note = ''; Object.assign(form, blankHolding()); draw(); }
+    else if (preset) location.hash = '#/invest';
+    else {
+      Object.assign(form, { amount: '', note: '', holding: 'new', hName: '', hType: 'Stock', hInst: '', hTicker: '', shares: '', removed: '' });
+      draw();
+    }
   }
 
   function remove() {
-    const buy = !!existing.investId;
-    if (!confirm(buy ? 'Delete this entry? The amount will also be taken out of its holding on the Invest page.' : 'Delete this entry?')) return;
-    update((st) => {
-      st.transactions = st.transactions.filter((t) => t.id !== existing.id);
-      if (buy) { undoBuy(st, existing); pruneHoldings(st, [existing.investId]); }
-    }, { silent: true });
+    const linked = !!existing.investId;
+    if (!confirm(linked ? 'Delete this entry? The Invest page will be put back the way it was before it.' : 'Delete this entry?')) return;
+    update((st) => removeTx(st, existing), { silent: true });
     toast('Deleted');
     location.hash = '#/history';
   }
 
-  if (id && !existing) { root.append(h('div', { class: 'empty' }, 'That entry no longer exists.')); return; }
+  if (id && !preset && !existing) { root.append(h('div', { class: 'empty' }, 'That entry no longer exists.')); return; }
   draw();
 }

@@ -6,6 +6,11 @@ import { toast, empty, cssVar, donut } from '../components.js';
 
 export const title = 'Net worth';
 
+const nextMonth = (m) => {
+  const [y, mo] = m.split('-').map(Number);
+  return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, '0')}`;
+};
+
 export function render(root) {
   const s = getState();
   const { currency } = s.settings;
@@ -46,22 +51,56 @@ export function render(root) {
     root.append(h('div', { class: 'card' }, h('h2', {}, '🥧 Where your money is'), d.el));
   }
 
-  // trend
-  if (rows.length >= 2 && typeof Chart !== 'undefined') {
-    const canvas = h('canvas');
-    root.append(h('div', { class: 'card' }, h('h2', {}, '📈 Trend'), h('div', { class: 'chart-box' }, canvas)));
-    const chart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: rows.map((r) => r.month),
-        datasets: [
-          { label: 'Net worth', data: rows.map(net), borderColor: cssVar('--brand'), backgroundColor: cssVar('--brand-soft'), fill: true, tension: 0.3 },
-          { label: 'Investments', data: rows.map((r) => r.invest), borderColor: '#7bd3b0', borderDash: [5, 4], tension: 0.3, pointRadius: 2 },
-        ],
-      },
-      options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: cssVar('--text'), boxWidth: 12 } } }, scales: { x: { ticks: { color: cssVar('--muted') } }, y: { ticks: { color: cssVar('--muted') } } } },
+  // cash vs time and investments vs time: side by side on wide screens, one at a time (with a switch) on phones
+  if (typeof Chart !== 'undefined') {
+    root.classList.add('wide');
+    const compact = new Intl.NumberFormat(undefined, { notation: 'compact' });
+
+    // cash at the end of each calendar month, worked out from the transactions
+    const txs = [...s.transactions].sort((a, b) => a.date.localeCompare(b.date));
+    const firstMonth = [txs[0] && txs[0].date.slice(0, 7), rows[0] && rows[0].month, month].filter(Boolean).sort()[0];
+    const cashPts = [];
+    for (let m = firstMonth; m <= month; m = nextMonth(m)) {
+      if (m === month) { cashPts.push([m, now.cash]); break; }
+      const cutoff = nextMonth(m) + '-01';
+      cashPts.push([m, s.profile.openingCash + txs.filter((t) => t.date < cutoff).reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0)]);
+    }
+    // investments: monthly snapshots, then the daily log (last value of each month wins), then today
+    const inv = new Map(rows.map((r) => [r.month, r.invest]));
+    s.valueLog.forEach((v) => inv.set(v.date.slice(0, 7), v.invest));
+    if (now.invest > 0 || inv.size) inv.set(month, now.invest);
+    const investPts = [...inv.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+    const make = (canvas, title, pts, color, soft) => {
+      const chart = new Chart(canvas, {
+        type: 'line',
+        data: { labels: pts.map((p) => p[0]), datasets: [{ label: title, data: pts.map((p) => p[1]), borderColor: color, backgroundColor: soft, fill: true, tension: 0.3, pointRadius: pts.length < 4 ? 4 : 2 }] },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ' ' + money(c.parsed.y, currency) } } },
+          scales: { x: { ticks: { color: cssVar('--muted'), maxTicksLimit: 6 } }, y: { beginAtZero: pts.length < 3, ticks: { color: cssVar('--muted'), callback: (v) => compact.format(v) } } },
+        },
+      });
+      charts.push(chart);
+      return chart;
+    };
+    const panes = [
+      { key: 'cash', label: '💵 Cash', title: 'Daily account over time', pts: cashPts, color: '#e8467a', soft: 'rgba(232,70,122,.15)', now: now.cash },
+      { key: 'invest', label: '📈 Investments', title: 'Investments over time', pts: investPts, color: '#3fb58a', soft: 'rgba(63,181,138,.18)', now: now.invest },
+    ].map((p) => {
+      p.canvas = h('canvas');
+      const body = p.pts.length ? h('div', { class: 'chart-box' }, p.canvas) : empty('Nothing to chart yet.');
+      p.el = h('div', { class: 'card pane' }, h('h2', {}, p.title), h('div', { class: 'big' }, money(p.now, currency)), body,
+        p.key === 'invest' && p.pts.length < 3 ? h('div', { class: 'muted' }, 'Your investment value is saved every day you open the app, so this fills in over time.') : null);
+      return p;
     });
-    charts.push({ destroy: () => chart.destroy() });
+    const show = (key) => {
+      panes.forEach((p) => { p.el.classList.toggle('on', p.key === key); p.btn.classList.toggle('on', p.key === key); if (p.chart && p.key === key) p.chart.resize(); });
+    };
+    panes.forEach((p) => { p.btn = h('button', { onClick: () => show(p.key) }, p.label); });
+    root.append(h('div', { class: 'pair-toggle segmented' }, panes.map((p) => p.btn)), h('div', { class: 'pair' }, panes.map((p) => p.el)));
+    show('cash'); // show the first pane before building the charts so they measure a visible box
+    panes.forEach((p) => { if (p.pts.length) p.chart = make(p.canvas, p.title, p.pts, p.color, p.soft); });
   }
 
   // inputs that feed the net worth
