@@ -36,15 +36,16 @@
       <ellipse class="paw" cx="318" cy="70" rx="42" ry="29"/>
       <ellipse class="pad" cx="310" cy="71" rx="28" ry="17"/>
       <circle class="bean" cx="343" cy="59" r="4.5"/><circle class="bean" cx="351" cy="74" r="4.5"/><circle class="bean" cx="339" cy="86" r="4.5"/>
-      <!-- cheeks -->
-      <circle class="cheek" cx="118" cy="48" r="45"/>
-      <circle class="cheek" cx="242" cy="48" r="45"/>
-      <path class="shine" d="M88 30 C95 21 106 17 117 17 M272 30 C265 21 254 17 243 17"/>
-      <path class="line" d="M146 14 C157 14 166 9 171 4 M214 14 C203 14 194 9 189 4"/>
-      <!-- lighter, fluffy belly fur under the bum-hole -->
-      <path class="belly" d="M166 50 L158 58 L162 61 L153 72 L157 75 L148 87 L153 90 L145 101 L153 100 L158 95 L163 102 L169 96 L174 103 L180 96 L186 103 L191 96 L197 102 L202 95 L207 100 L215 101 L207 90 L212 87 L203 75 L207 72 L198 61 L202 58 L194 50 Z"/>
-      <path class="hair-cream" d="M160 66 l-9 -3 M155 80 l-10 -2 M150 94 l-9 0 M200 66 l9 -3 M205 80 l10 -2 M210 94 l9 0"/>
-      <path class="hair-tan" d="M172 66 l-2 9 M180 70 l1 10 M188 66 l2 9 M175 86 l-1 8 M185 84 l2 8"/>
+      <!-- rump: one shape whose top sweeps down into the tail valley -->
+      <path class="rump" d="M66 64 C64 32 88 6 122 5 C142 5 160 9 170 19 C175 23 185 23 190 19 C200 9 218 5 238 5 C272 6 296 32 294 64 C293 86 276 99 246 99 H114 C84 99 67 86 66 64 Z"/>
+      <!-- cheeks: lighter layer on top of the rump -->
+      <path class="cheek" d="M76 62 C76 34 94 14 120 14 C140 14 156 24 163 40 C168 54 166 72 154 84 C142 95 118 97 100 94 C84 90 76 78 76 62 Z"/>
+      <path class="cheek" d="M284 62 C284 34 266 14 240 14 C220 14 204 24 197 40 C192 54 194 72 206 84 C218 95 242 97 260 94 C276 90 284 78 284 62 Z"/>
+      <path class="shine" d="M90 34 C97 25 107 21 118 21 M270 34 C263 25 253 21 242 21"/>
+      <path class="fold" d="M92 84 C101 90 113 92 126 90 M268 84 C259 90 247 92 234 90"/>
+      <!-- belly: two flat colour layers -->
+      <path class="belly-1" d="M168 44 C163 62 156 82 150 96 Q150 102 158 102 H202 Q210 102 210 96 C204 82 197 62 192 44 Z"/>
+      <path class="belly-2" d="M174 52 C171 66 168 82 164 98 Q164 100 167 100 H193 Q196 100 196 98 C192 82 189 66 186 52 Z"/>
     </svg>
     <a href="#/invest" data-tab="invest">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span>Invest</span>
@@ -54,7 +55,10 @@
     </a>
     <a href="#/add" data-tab="add" class="tab-add" aria-label="Add">
       <!-- tail tuft sticking up, behind the bum-hole -->
-      <svg class="tail" viewBox="0 0 40 46" aria-hidden="true"><path class="tuft" d="M2 45 C10 43 8 38 8 32 C8 24 16 22 17 16 C18 10 19 6 20 1 C21 6 22 10 23 16 C24 22 32 24 32 32 C32 38 30 43 38 45"/></svg>
+      <svg class="tail" viewBox="0 0 40 46" aria-hidden="true">
+        <defs><linearGradient id="tailtip" x1="0" y1="0" x2="0" y2="1"><stop class="tip-a" offset="0.34"/><stop class="tip-b" offset="0.34"/></linearGradient></defs>
+        <path class="tuft" fill="url(#tailtip)" d="M5 45 C9 36 13 31 14 22 C15 13 22 6 31 1 C29 8 31 14 29 22 C27 31 33 37 35 45"/>
+      </svg>
       <!-- the "+" is the bum-hole -->
       <svg class="hole" viewBox="0 0 48 48" aria-hidden="true"><circle class="skin" cx="24" cy="24" r="22"/><circle class="ring" cx="24" cy="24" r="15"/><path class="plus" d="M24 14 v20 M14 24 h20"/></svg>
     </a>
