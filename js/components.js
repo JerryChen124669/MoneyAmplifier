@@ -68,22 +68,33 @@ function openMonthPicker(onChange) {
 /** Second line of an ordinary transaction row: its note. */
 export const txNote = (t) => t.note || '';
 
-/** "💰 Cash → 📈 TSMC" (purchase) or "📈 TSMC → 💰 Cash" (cash-out): one line for money moving between cash and an investment. */
-export function flowText(t) {
+/**
+ * Money moving between cash and an investment, as one wide row that shows BOTH sides:
+ *   purchase:  💰 Cash −30,000  →  📈 TSMC +30,000
+ *   cash-out:  📈 TSMC −50,000  →  💰 Cash +55,000   (the two can differ: the difference is profit)
+ * `meta` is an optional small line under it (e.g. the date); the entry's note is added after it.
+ */
+export function flowRow(t, { meta = '' } = {}) {
+  const { currency } = getState().settings;
   const hold = t.investId && getState().investments.find((i) => i.id === t.investId);
-  const name = hold ? hold.name : 'Investment';
-  return t.type === 'expense' ? `💰 Cash → 📈 ${name}` : `📈 ${name} → 💰 Cash`;
+  const buy = t.type === 'expense';
+  const invAmount = t.holdValue ?? t.amount;
+  const cash = { label: '💰 Cash', amount: buy ? -t.amount : t.amount };
+  const inv = { label: `📈 ${hold ? hold.name : 'Investment'}`, amount: buy ? invAmount : -invAmount };
+  const side = (x, cls) => h('div', { class: `flow-side ${cls}` },
+    h('div', { class: 'flow-name' }, x.label),
+    h('div', { class: `flow-amt ${x.amount < 0 ? 'expense' : 'income'}` }, (x.amount < 0 ? '−' : '+') + money(Math.abs(x.amount), currency)));
+  const [from, to] = buy ? [cash, inv] : [inv, cash];
+  const extra = [meta, t.note].filter(Boolean).join(' · ');
+  return h('a', { class: 'tx transfer flow', href: `#/add/${t.id}` },
+    side(from, 'from'), h('span', { class: 'flow-arrow', 'aria-hidden': 'true' }, '→'), side(to, 'to'),
+    extra ? h('div', { class: 'flow-meta muted' }, extra) : null);
 }
 
 export function txRow(t) {
   const { currency } = getState().settings;
   const sign = t.type === 'income' ? '+' : '−';
-  if (isTransfer(t)) {
-    // investment money flow: a single wide line instead of the usual two-line row
-    return h('a', { class: 'tx transfer', href: `#/add/${t.id}` },
-      h('div', { class: 'grow name' }, flowText(t), t.note ? h('span', { class: 'muted' }, ` · ${t.note}`) : null),
-      h('div', { class: 'amt flow' }, sign + money(t.amount, currency)));
-  }
+  if (isTransfer(t)) return flowRow(t);
   const note = txNote(t);
   return h('a', { class: 'tx', href: `#/add/${t.id}` },
     h('div', { class: 'grow' },

@@ -227,7 +227,13 @@ button:disabled { opacity: .45; cursor: default; }
 /* money moving between cash and an investment: one wide, tinted line */
 .tx.transfer { background: var(--brand-soft); border-radius: 14px; border-bottom: 0; margin: 6px -10px; padding: 11px 12px; }
 .tx.transfer .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tx .amt.flow { color: var(--brand); }
+.tx.transfer.flow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2px 8px; }
+.flow-side { min-width: 0; }
+.flow-side.to { text-align: right; }
+.flow-name { font-size: .86rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flow-amt { font-weight: 800; white-space: nowrap; }
+.flow-arrow { color: var(--brand); font-weight: 800; font-size: 1.1rem; }
+.flow-meta { grid-column: 1 / -1; font-size: .78rem; }
 
 label.check { display: flex; gap: 10px; align-items: flex-start; font-size: .85rem; font-weight: 600; color: var(--muted); }
 label.check input { width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: var(--brand); }

@@ -4,7 +4,7 @@
 // Holdings with a ticker + shares are re-priced automatically (see prices.js).
 import { h, uid, today, money, sum } from '../util.js';
 import { getState, update, commitTx, INVEST_TYPES, TYPE_EMOJI, INVEST_CATEGORY, INVEST_OUT_CATEGORY, investTotal, isAuto, isTransfer } from '../store.js';
-import { toast, empty, donut, flowText } from '../components.js';
+import { toast, empty, donut, flowRow } from '../components.js';
 import { refreshPrices } from '../prices.js';
 
 export const title = 'Investments';
@@ -110,9 +110,7 @@ export function render(root) {
     const moves = s.transactions.filter(isTransfer).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
     root.append(h('h2', { class: 'section-title' }, '🦴 Cash in / out'),
       h('div', { class: 'card', style: 'margin-top:8px' },
-        moves.length ? moves.map((t) => h('a', { class: 'tx transfer', href: `#/add/${t.id}` },
-          h('div', { class: 'grow name' }, flowText(t), h('span', { class: 'muted' }, ` · ${t.date}${t.note ? ' · ' + t.note : ''}`)),
-          h('div', { class: 'amt flow' }, (t.type === 'income' ? '+' : '−') + money(t.amount, currency))))
+        moves.length ? moves.map((t) => flowRow(t, { meta: t.date }))
           : empty('Nothing yet. Buy more or cash out and it shows up here.'),
         moves.length ? h('a', { href: '#/history', class: 'muted' }, 'See all in History →') : null));
   }

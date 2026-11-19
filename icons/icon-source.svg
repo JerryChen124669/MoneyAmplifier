@@ -10,14 +10,14 @@
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
   <path d="M82 118l7 18 18 7-18 7-7 18-7-18-18-7 18-7z" fill="#fff" opacity=".95"/>
-  <path d="M440 330l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#fff" opacity=".85"/>
-  <path d="M112 440l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff" opacity=".8"/>
-  <g transform="rotate(14 428 100)">
-    <circle cx="428" cy="100" r="44" fill="#ffd166" stroke="#d99a1c" stroke-width="9"/>
-    <circle cx="428" cy="100" r="29" fill="none" stroke="#e8a92e" stroke-width="4.5"/>
-    <text x="428" y="117" font-family="Arial, sans-serif" font-size="44" font-weight="700" text-anchor="middle" fill="#c97f00">$</text>
+  <path d="M440 340l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#fff" opacity=".85"/>
+  <path d="M112 420l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff" opacity=".8"/>
+  <g transform="rotate(14 432 92)">
+    <circle cx="432" cy="92" r="42" fill="#ffd166" stroke="#d99a1c" stroke-width="9"/>
+    <circle cx="432" cy="92" r="27" fill="none" stroke="#e8a92e" stroke-width="4.5"/>
+    <text x="432" y="108" font-family="Arial, sans-serif" font-size="42" font-weight="700" text-anchor="middle" fill="#c97f00">$</text>
   </g>
-  <g transform="translate(61 104) scale(1.95)">
+  <g transform="translate(46 52) scale(2.1)">
   <g stroke="#6b3a22" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
     <!-- ears -->
     <path d="M28 84 C20 54 28 30 42 22 C62 28 80 44 88 62 Z" fill="#eeae62"/>
@@ -52,11 +52,5 @@
   <path d="M100 130 v8" stroke="#4a2a1a" stroke-width="3.2" stroke-linecap="round"/>
   <path d="M89 118 h22 c0 8 -6 13 -11 13 c-5 0 -11 -5 -11 -13 z" fill="#4a2a1a"/>
   <ellipse cx="95" cy="121" rx="3.4" ry="1.6" fill="#fff" opacity=".35"/>
-  <!-- little paws peeking up -->
-  <g stroke="#6b3a22" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">
-    <ellipse cx="60" cy="176" rx="21" ry="11" fill="#eeae62"/>
-    <ellipse cx="140" cy="176" rx="21" ry="11" fill="#eeae62"/>
-    <path d="M52 177 v5 M60 178 v6 M68 177 v5 M132 177 v5 M140 178 v6 M148 177 v5" fill="none" stroke-width="2.4"/>
-  </g>
 </g>
 </svg>
