@@ -27,41 +27,42 @@
   <div id="toast" role="status" aria-live="polite"></div>
 
   <nav class="tabbar" aria-label="Main">
-    <!-- a Shiba seen from behind: back, two cheeks, lighter belly fur with stray hairs, two hind paws -->
-    <svg class="butt" viewBox="0 0 360 112" preserveAspectRatio="none" aria-hidden="true">
-      
-      <path class="dog-body" d="M10 70 C10 28 60 8 180 8 C300 8 350 28 350 70 V92 Q350 112 330 112 H30 Q10 112 10 92 Z"/>
-      <circle class="dog-body" cx="110" cy="56" r="46"/>
-      <circle class="dog-body" cx="250" cy="56" r="46"/>
-      <path class="shine" d="M82 38 C90 29 101 26 112 26 M278 38 C270 29 259 26 248 26"/>
-      <!-- lighter lower-belly fur under the bum-hole -->
-      <path class="dog-cream" d="M168 46 C160 66 148 92 144 112 H216 C212 92 200 66 192 46 Z"/>
-      <path class="hair-cream" d="M163 58 l-9 -5 M157 70 l-9 -3 M152 84 l-10 -2 M147 98 l-9 -1 M197 58 l9 -5 M203 70 l9 -3 M208 84 l10 -2 M213 98 l9 -1"/>
-      <path class="hair-tan" d="M165 62 l8 -3 M159 76 l9 -2 M154 90 l9 -1 M150 104 l9 0 M195 62 l-8 -3 M201 76 l-9 -2 M206 90 l-9 -1 M210 104 l-9 0"/>
-      <path class="hair-tan" d="M178 74 l-3 8 M185 80 l2 9 M176 92 l-2 8 M184 98 l1 8"/>
-      <!-- hind paws -->
-      <ellipse class="paw" cx="40" cy="90" rx="36" ry="21"/>
-      <ellipse class="paw" cx="320" cy="90" rx="36" ry="21"/>
-      <path class="toes" d="M28 101 v7 M40 103 v7 M52 101 v7 M308 101 v7 M320 103 v7 M332 101 v7"/>
+    <!-- a Shiba seen from behind (after the sketch): two paws at the sides, two big cheeks, fluffy belly fur, tail tuft + bum-hole in the middle -->
+    <svg class="butt" viewBox="0 0 360 104" preserveAspectRatio="none" aria-hidden="true">
+      <!-- hind paws: sole pad + toe beans -->
+      <ellipse class="paw" cx="42" cy="70" rx="42" ry="29"/>
+      <ellipse class="pad" cx="50" cy="71" rx="28" ry="17"/>
+      <circle class="bean" cx="17" cy="59" r="4.5"/><circle class="bean" cx="9" cy="74" r="4.5"/><circle class="bean" cx="21" cy="86" r="4.5"/>
+      <ellipse class="paw" cx="318" cy="70" rx="42" ry="29"/>
+      <ellipse class="pad" cx="310" cy="71" rx="28" ry="17"/>
+      <circle class="bean" cx="343" cy="59" r="4.5"/><circle class="bean" cx="351" cy="74" r="4.5"/><circle class="bean" cx="339" cy="86" r="4.5"/>
+      <!-- cheeks -->
+      <circle class="cheek" cx="118" cy="48" r="45"/>
+      <circle class="cheek" cx="242" cy="48" r="45"/>
+      <path class="shine" d="M88 30 C95 21 106 17 117 17 M272 30 C265 21 254 17 243 17"/>
+      <path class="line" d="M146 14 C157 14 166 9 171 4 M214 14 C203 14 194 9 189 4"/>
+      <!-- lighter, fluffy belly fur under the bum-hole -->
+      <path class="belly" d="M166 50 L158 58 L162 61 L153 72 L157 75 L148 87 L153 90 L145 101 L153 100 L158 95 L163 102 L169 96 L174 103 L180 96 L186 103 L191 96 L197 102 L202 95 L207 100 L215 101 L207 90 L212 87 L203 75 L207 72 L198 61 L202 58 L194 50 Z"/>
+      <path class="hair-cream" d="M160 66 l-9 -3 M155 80 l-10 -2 M150 94 l-9 0 M200 66 l9 -3 M205 80 l10 -2 M210 94 l9 0"/>
+      <path class="hair-tan" d="M172 66 l-2 9 M180 70 l1 10 M188 66 l2 9 M175 86 l-1 8 M185 84 l2 8"/>
     </svg>
-    <a href="#/home" data-tab="home">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span>
-    </a>
     <a href="#/invest" data-tab="invest">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span>Invest</span>
     </a>
+    <a href="#/home" data-tab="home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span>
+    </a>
     <a href="#/add" data-tab="add" class="tab-add" aria-label="Add">
-      <!-- the tail: a small tuft sticking up -->
-      <svg class="tail" viewBox="0 0 36 44" aria-hidden="true"><path class="tuft" d="M6 44 C3 28 12 12 25 2 C24 14 35 27 31 44"/></svg>
+      <!-- tail tuft sticking up, behind the bum-hole -->
+      <svg class="tail" viewBox="0 0 40 46" aria-hidden="true"><path class="tuft" d="M2 45 C10 43 8 38 8 32 C8 24 16 22 17 16 C18 10 19 6 20 1 C21 6 22 10 23 16 C24 22 32 24 32 32 C32 38 30 43 38 45"/></svg>
       <!-- the "+" is the bum-hole -->
-      <svg class="hole" viewBox="0 0 30 30" aria-hidden="true"><circle class="skin" cx="15" cy="15" r="14"/><path class="plus" d="M15 8 v14 M8 15 h14"/></svg>
-      <span>Add</span>
+      <svg class="hole" viewBox="0 0 48 48" aria-hidden="true"><circle class="skin" cx="24" cy="24" r="22"/><circle class="ring" cx="24" cy="24" r="15"/><path class="plus" d="M24 14 v20 M14 24 h20"/></svg>
     </a>
     <a href="#/history" data-tab="history">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>History</span>
     </a>
     <a href="#/wealth" data-tab="wealth">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Net worth</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Profile</span>
     </a>
   </nav>
 

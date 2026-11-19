@@ -4,7 +4,7 @@ import { h, money, ymd, uid } from '../util.js';
 import { getState, update, netWorthNow } from '../store.js';
 import { toast, empty, cssVar, donut } from '../components.js';
 
-export const title = 'Net worth';
+export const title = 'Profile';
 
 const nextMonth = (m) => {
   const [y, mo] = m.split('-').map(Number);
