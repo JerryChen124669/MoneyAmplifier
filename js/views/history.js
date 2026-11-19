@@ -3,7 +3,7 @@
 // Picking Expenses or Income shows a doughnut chart of what the money was made of.
 import { h, money, sum, periodRange, dayLabel } from '../util.js';
 import { getState } from '../store.js';
-import { monthNav, txRow, empty, activePeriod, donut } from '../components.js';
+import { monthNav, txRow, txNote, empty, activePeriod, donut } from '../components.js';
 
 export const title = 'History';
 
@@ -77,7 +77,7 @@ export function render(root) {
             h('span', {}, money(net, currency))),
           h('div', { class: 'card', style: 'padding:4px 16px;margin-bottom:0' },
             items.map((t) => h('a', { class: 'tx', href: `#/add/${t.id}` },
-              h('div', { class: 'grow' }, h('div', { class: 'name' }, dayLabel(t.date)), t.note ? h('div', { class: 'muted' }, t.note) : null),
+              h('div', { class: 'grow' }, h('div', { class: 'name' }, dayLabel(t.date)), txNote(t) ? h('div', { class: 'muted' }, txNote(t)) : null),
               h('div', { class: `amt ${t.type}` }, (t.type === 'income' ? '+' : '−') + money(t.amount, currency))))))));
       return;
     }

@@ -1,6 +1,6 @@
 # MoneyAmplifier
 
-Personal money tracker (spending, budgets, net worth). A static web app / PWA: plain HTML + JavaScript modules, no build step. Data is stored in the browser on your device (localStorage); there is no server.
+Personal money tracker (daily spending, investments, net worth). A static web app / PWA: plain HTML + JavaScript modules, no build step. Data is stored in the browser on your device (localStorage); there is no server.
 
 ## Project map
 | Path | What it is |

@@ -1,6 +1,6 @@
 // Settings: currency, billing-period start day, categories, backup / restore.
 import { h, download, today } from '../util.js';
-import { getState, update, replaceAll, exportJSON, exportCSV, exportInvestmentsCSV, defaults } from '../store.js';
+import { getState, update, replaceAll, exportJSON, exportCSV, exportInvestmentsCSV, defaults, INVEST_CATEGORY } from '../store.js';
 import { toast } from '../components.js';
 
 export const title = 'Settings';
@@ -21,8 +21,11 @@ export function render(root) {
     return h('div', { class: 'card' }, h('h2', {}, label),
       s.categories[type].map((c) => h('div', { class: 'row', style: 'padding:6px 0;border-bottom:1px solid var(--line)' },
         h('div', { class: 'grow' }, c),
-        h('button', { 'aria-label': `Rename ${c}`, onClick: () => rename(type, c) }, 'Rename'),
-        h('button', { class: 'btn-danger', 'aria-label': `Delete ${c}`, onClick: () => removeCat(type, c) }, '×'))),
+        // the Investment category is what links purchases to the Invest page, so it stays fixed
+        c === INVEST_CATEGORY && type === 'expense'
+          ? h('span', { class: 'muted' }, '🔒 feeds Invest page')
+          : [h('button', { 'aria-label': `Rename ${c}`, onClick: () => rename(type, c) }, 'Rename'),
+            h('button', { class: 'btn-danger', 'aria-label': `Delete ${c}`, onClick: () => removeCat(type, c) }, '×')])),
       h('div', { class: 'row', style: 'margin-top:10px' }, input, h('button', { onClick: add }, 'Add')));
   };
 

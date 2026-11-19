@@ -1,6 +1,5 @@
 // Shared UI pieces used by several views.
-import { h, money, sum, periodKeyFor, periodLabel, shiftKey, today } from './util.js';
-import { getState } from './store.js';
+import { h, money, sum, periodKeyFor, periodLabel, shiftKey, today } from './util.js';import { getState } from './store.js';
 
 /** Which month/period the Home and History tabs are showing (kept while you switch tabs). */
 export const ui = { period: null };
@@ -17,17 +16,70 @@ export function monthNav(onChange) {
   const go = (delta) => { ui.period = shiftKey(activePeriod(), delta); onChange(); };
   return h('div', { class: 'month-nav' },
     h('button', { 'aria-label': 'Previous period', onClick: () => go(-1) }, '‹'),
-    h('strong', {}, periodLabel(activePeriod(), startDay)),
+    h('button', { class: 'month-label', 'aria-haspopup': 'dialog', onClick: () => openMonthPicker(onChange) },
+      periodLabel(activePeriod(), startDay), h('span', { 'aria-hidden': 'true' }, ' ▾')),
     h('button', { 'aria-label': 'Next period', onClick: () => go(1) }, '›'));
+}
+
+/** Pop-up calendar: pick a year with ‹ ›, then tap a month. A dot marks months that have entries. */
+function openMonthPicker(onChange) {
+  const { startDay } = getState().settings;
+  const selected = activePeriod();
+  const now = currentPeriod();
+  const used = new Set(getState().transactions.map((t) => periodKeyFor(t.date, startDay)));
+  let year = Number(selected.slice(0, 4));
+
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+    window.removeEventListener('hashchange', close);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  const pick = (key) => { ui.period = key; close(); onChange(); };
+
+  const panel = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Choose month' });
+  const overlay = h('div', { class: 'sheet-backdrop', onClick: (e) => { if (e.target === overlay) close(); } }, panel);
+
+  function draw() {
+    panel.replaceChildren(
+      h('div', { class: 'sheet-head' },
+        h('button', { 'aria-label': 'Previous year', onClick: () => { year -= 1; draw(); } }, '‹'),
+        h('strong', {}, String(year)),
+        h('button', { 'aria-label': 'Next year', onClick: () => { year += 1; draw(); } }, '›')),
+      h('div', { class: 'month-grid' }, Array.from({ length: 12 }, (_, i) => {
+        const key = `${year}-${String(i + 1).padStart(2, '0')}`;
+        const cls = [key === selected ? 'on' : '', key === now ? 'now' : '', used.has(key) ? 'has' : ''].join(' ').trim();
+        return h('button', { class: cls, 'aria-pressed': key === selected ? 'true' : 'false', onClick: () => pick(key) },
+          new Date(year, i, 1).toLocaleDateString(undefined, { month: 'short' }));
+      })),
+      startDay !== 1 ? h('p', { class: 'muted', style: 'margin:10px 4px 0' }, `Each month runs from day ${startDay} to day ${startDay - 1} of the next.`) : '',
+      h('div', { class: 'row', style: 'margin-top:12px' },
+        h('button', { class: 'grow', onClick: () => pick(now) }, 'This month'),
+        h('button', { class: 'grow', onClick: close }, 'Close')));
+  }
+  draw();
+  document.body.append(overlay);
+  document.addEventListener('keydown', onKey);
+  window.addEventListener('hashchange', close);
+  const on = panel.querySelector('.month-grid .on');
+  if (on) on.focus();
+}
+
+/** Second line of a transaction row: the note, or for an investment purchase the holding it went into. */
+export function txNote(t) {
+  if (t.note) return t.note;
+  const hold = t.investId && getState().investments.find((i) => i.id === t.investId);
+  return hold ? `→ ${hold.name}` : '';
 }
 
 export function txRow(t) {
   const { currency } = getState().settings;
   const sign = t.type === 'income' ? '+' : '−';
+  const note = txNote(t);
   return h('a', { class: 'tx', href: `#/add/${t.id}` },
     h('div', { class: 'grow' },
       h('div', { class: 'name' }, t.category || 'Uncategorised'),
-      t.note ? h('div', { class: 'muted' }, t.note) : null),
+      note ? h('div', { class: 'muted' }, note) : null),
     h('div', { class: `amt ${t.type}` }, sign + money(t.amount, currency)));
 }
 
