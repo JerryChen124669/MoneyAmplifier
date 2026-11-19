@@ -1,41 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 190" width="200" height="190">
   <!-- Shiba Inu mascot (transparent background), used inside the app -->
   <defs>
-    <path id="face" d="M100 40 C140 40 174 62 182 94 L192 100 L184 111 L192 124 L180 130 L183 148 L165 149 C150 167 126 175 100 175 C74 175 50 167 35 149 L17 148 L20 130 L8 124 L16 111 L8 100 L18 94 C26 62 60 40 100 40 Z"/>
+    <path id="face" d="M100 50 C146 50 184 74 184 110 L193 120 L183 127 C178 152 142 174 100 174 C58 174 22 152 17 127 L7 120 L16 110 C16 74 54 50 100 50 Z"/>
     <clipPath id="faceclip"><use href="#face"/></clipPath>
   </defs>
-  <g stroke="#7a4b2a" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+  <g stroke="#6b3a22" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
     <!-- ears -->
-    <path d="M26 90 C12 58 20 30 44 20 C66 24 84 40 92 58 Z" fill="#dc9a55"/>
-    <path d="M174 90 C188 58 180 30 156 20 C134 24 116 40 108 58 Z" fill="#dc9a55"/>
-    <path d="M35 74 C30 54 35 40 44 32 C57 37 68 46 74 58 Z" fill="#fbe3c8" stroke="none"/>
-    <path d="M165 74 C170 54 165 40 156 32 C143 37 132 46 126 58 Z" fill="#fbe3c8" stroke="none"/>
-    <!-- head: orange with fluffy cheeks -->
-    <use href="#face" fill="#e3a561"/>
-    <!-- cream mask: cheeks, muzzle, chin -->
+    <path d="M28 84 C20 54 28 30 42 22 C62 28 80 44 88 62 Z" fill="#eeae62"/>
+    <path d="M172 84 C180 54 172 30 158 22 C138 28 120 44 112 62 Z" fill="#eeae62"/>
+    <path d="M40 68 C37 52 40 40 45 33 C56 39 65 48 70 58 Z" fill="#f9d9c4" stroke="none"/>
+    <path d="M160 68 C163 52 160 40 155 33 C144 39 135 48 130 58 Z" fill="#f9d9c4" stroke="none"/>
+    <!-- head -->
+    <use href="#face" fill="#eeae62"/>
+    <!-- cream cheeks, muzzle and chin -->
     <g clip-path="url(#faceclip)" stroke="none">
-      <path d="M0 124 C12 104 40 100 62 116 C76 124 90 118 100 106 C110 118 124 124 138 116 C160 100 188 104 200 124 L200 190 L0 190 Z" fill="#fff4e2"/>
+      <path d="M0 118 C14 100 40 98 58 111 C74 121 90 118 100 106 C110 118 126 121 142 111 C160 98 186 100 200 118 L200 190 L0 190 Z" fill="#fff6e6"/>
     </g>
     <use href="#face" fill="none"/>
   </g>
-  <!-- four-eyes spots -->
-  <ellipse cx="64" cy="79" rx="8" ry="5" fill="#fbe3c8"/>
-  <ellipse cx="136" cy="79" rx="8" ry="5" fill="#fbe3c8"/>
+  <!-- eyebrow spots + forehead dot -->
+  <ellipse cx="66" cy="81" rx="7.5" ry="5.5" fill="#fff6e6"/>
+  <ellipse cx="134" cy="81" rx="7.5" ry="5.5" fill="#fff6e6"/>
+  <circle cx="100" cy="72" r="3.4" fill="#c98a4c"/>
   <!-- eyes -->
-  <ellipse cx="64" cy="100" rx="8.5" ry="10.5" fill="#3a2214"/>
-  <ellipse cx="136" cy="100" rx="8.5" ry="10.5" fill="#3a2214"/>
-  <circle cx="67" cy="96" r="3.6" fill="#fff"/>
-  <circle cx="139" cy="96" r="3.6" fill="#fff"/>
-  <circle cx="61" cy="105" r="1.7" fill="#fff" opacity=".85"/>
-  <circle cx="133" cy="105" r="1.7" fill="#fff" opacity=".85"/>
+  <ellipse cx="66" cy="102" rx="8.5" ry="10" fill="#4a2a1a"/>
+  <ellipse cx="134" cy="102" rx="8.5" ry="10" fill="#4a2a1a"/>
+  <circle cx="69" cy="98" r="3.4" fill="#fff"/>
+  <circle cx="137" cy="98" r="3.4" fill="#fff"/>
+  <circle cx="63" cy="107" r="1.6" fill="#fff" opacity=".85"/>
+  <circle cx="131" cy="107" r="1.6" fill="#fff" opacity=".85"/>
   <!-- blush -->
-  <ellipse cx="38" cy="128" rx="12" ry="7" fill="#f4a58a" opacity=".6"/>
-  <ellipse cx="162" cy="128" rx="12" ry="7" fill="#f4a58a" opacity=".6"/>
-  <!-- open smile with tongue -->
-  <path d="M85 141 C88 162 112 162 115 141 Z" fill="#5a2a22" stroke="#3a2214" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M91 153 C95 163 105 163 109 153 C104 149 96 149 91 153 Z" fill="#f08a8a"/>
-  <!-- nose -->
-  <path d="M88 125 h24 c0 8 -7 13 -12 13 c-5 0 -12 -5 -12 -13 z" fill="#3a2214"/>
-  <ellipse cx="96" cy="128" rx="3.5" ry="1.7" fill="#fff" opacity=".35"/>
-  <path d="M100 138 v4" stroke="#3a2214" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="40" cy="131" r="9" fill="#e5a283" opacity=".7"/>
+  <circle cx="160" cy="131" r="9" fill="#e5a283" opacity=".7"/>
+  <!-- tongue, smile, nose -->
+  <path d="M92 142 C92 157 108 157 108 142 Z" fill="#ee7d5a" stroke="#6b3a22" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="M82 136 C90 147 110 147 118 136" fill="none" stroke="#4a2a1a" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M100 130 v8" stroke="#4a2a1a" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M89 118 h22 c0 8 -6 13 -11 13 c-5 0 -11 -5 -11 -13 z" fill="#4a2a1a"/>
+  <ellipse cx="95" cy="121" rx="3.4" ry="1.6" fill="#fff" opacity=".35"/>
+  <!-- little paws peeking up -->
+  <g stroke="#6b3a22" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">
+    <ellipse cx="60" cy="176" rx="21" ry="11" fill="#eeae62"/>
+    <ellipse cx="140" cy="176" rx="21" ry="11" fill="#eeae62"/>
+    <path d="M52 177 v5 M60 178 v6 M68 177 v5 M132 177 v5 M140 178 v6 M148 177 v5" fill="none" stroke-width="2.4"/>
+  </g>
 </svg>
