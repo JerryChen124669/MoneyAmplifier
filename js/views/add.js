@@ -3,8 +3,8 @@
 // Expenses in the "Investment" category and income in the "Investment cash-out" category move money between
 // the daily account and a holding on the Invest page, so both pages always stay in step.
 import { h, uid, today, money } from '../util.js';
-import { getState, update, INVEST_CATEGORY, INVEST_OUT_CATEGORY, INVEST_TYPES, TYPE_EMOJI, commitTx, removeTx } from '../store.js';
-import { toast } from '../components.js';
+import { getState, update, INVEST_CATEGORY, INVEST_OUT_CATEGORY, INVEST_TYPES, TYPE_EMOJI, commitTx, removeTx, ensureAccount } from '../store.js';
+import { toast, accountField, methodField } from '../components.js';
 
 export const title = 'Add';
 
@@ -17,10 +17,12 @@ export function render(root, id) {
   const presetHolding = preset ? id.slice(preset.length + 1) : null;
   const existing = id && !preset ? s.transactions.find((t) => t.id === id) : null;
 
+  // the account is typed (or picked from the ones you used before); a new name creates the account when you save
+  const acctNameOf = (id) => (s.accounts.find((a) => a.id === id) || s.accounts[0]).name;
+  const lastAcct = s.accounts.some((a) => a.id === s.settings.lastAccount) ? s.settings.lastAccount : s.accounts[0].id;
   const form = existing
-    ? { ...existing, amount: String(existing.amount) }
-    : { type: 'expense', amount: '', category: '', date: today(), note: '', account: s.accounts.some((a) => a.id === s.settings.lastAccount) ? s.settings.lastAccount : s.accounts[0].id };
-  if (!s.accounts.some((a) => a.id === form.account)) form.account = s.accounts[0].id;
+    ? { ...existing, amount: String(existing.amount), accountName: acctNameOf(existing.account), method: existing.method || '' }
+    : { type: 'expense', amount: '', category: '', date: today(), note: '', accountName: acctNameOf(lastAcct), method: s.settings.lastMethod || '' };
   Object.assign(form, { holding: 'new', hName: '', hType: 'Stock', hInst: '', hTicker: '', shares: '', removed: '' });
   if (existing && existing.investId) {
     if (s.investments.some((i) => i.id === existing.investId)) form.holding = existing.investId;
@@ -89,16 +91,13 @@ export function render(root, id) {
       h('div', { class: 'segmented' },
         ['expense', 'income'].map((t) => h('button', {
           class: form.type === t ? 'on' : '',
-          onClick: () => { if (form.type !== t) { form.type = t; form.category = ''; draw(); } },
+          onClick: () => { if (form.type !== t) { form.type = t; form.category = ''; if (t === 'income' && form.method === 'card') form.method = ''; draw(); } },
         }, t === 'expense' ? 'Expense' : 'Income'))),
       h('div', { class: 'card' }, amountEl),
-      // which account the money moves in: pick this first, then the category
-      h('div', { class: 'card' }, h('h2', {}, form.type === 'expense' ? '💳 Paid with' : '🏦 Goes into'),
-        h('div', { class: 'chips' }, s.accounts.map((a) => h('button', {
-          class: `chip ${form.account === a.id ? 'on' : ''}`,
-          'aria-pressed': form.account === a.id ? 'true' : 'false',
-          onClick: () => { form.account = a.id; draw(); },
-        }, a.name)))),
+      // which bank account, then how it was paid (cash / transfer / credit card), then the category
+      h('div', { class: 'card stack' }, h('h2', {}, '🏦 Account'),
+        accountField(form, { label: form.type === 'expense' ? 'Paid from which account?' : 'Goes into which account?' }),
+        methodField(form, { income: form.type === 'income', label: form.type === 'expense' ? 'How did you pay?' : 'How did it arrive?' })),
       h('div', { class: 'card' }, h('h2', {}, '🦴 Category'),
         h('div', { class: 'chips' }, cats.map((c) => h('button', {
           class: `chip ${form.category === c ? 'on' : ''}`,
@@ -118,7 +117,8 @@ export function render(root, id) {
     if (!(amount > 0)) return toast('Enter an amount greater than 0');
     if (!form.category) return toast('Pick a category');
     if (!form.date) return toast('Pick a date');
-    const record = { id: existing ? existing.id : uid(), type: form.type, amount, category: form.category, date: form.date, note: form.note.trim(), account: form.account };
+    if (!form.accountName.trim()) return toast('Type or pick an account');
+    const record = { id: existing ? existing.id : uid(), type: form.type, amount, category: form.category, date: form.date, note: form.note.trim(), method: form.method };
     let link = null;
     if (isBuy()) {
       if (form.holding === 'new' && !form.hName.trim()) return toast('Name what you bought, e.g. TSMC');
@@ -139,7 +139,12 @@ export function render(root, id) {
       if (!(shares > 0)) shares = heldShares > 0 && room > 0 ? heldShares * Math.min(1, removed / room) : 0;
       link = { pick: { id: hold.id }, holdValue: removed, shares };
     }
-    update((st) => { commitTx(st, record, existing, link); st.settings.lastAccount = record.account; }, { silent: true });
+    update((st) => {
+      record.account = ensureAccount(st, form.accountName); // a name you have not used before becomes a new account
+      commitTx(st, record, existing, link);
+      st.settings.lastAccount = record.account;
+      st.settings.lastMethod = form.method;
+    }, { silent: true });
     toast(link ? (isBuy() ? 'Saved! Added to Invest ✨' : 'Saved! Taken off Invest ✨') : 'Saved! ✨');
     if (existing) location.hash = '#/history';
     else if (preset) location.hash = '#/invest';

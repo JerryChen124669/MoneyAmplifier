@@ -41,7 +41,7 @@ export function render(root) {
       h('div', {}, h('span', { class: 'muted' }, '📈 Investments'), h('b', {}, money(now.invest, currency))),
       h('div', {}, h('span', { class: 'muted' }, '💳 Debts'), h('b', { class: 'expense' }, money(now.debts, currency))))));
 
-  // every account's balance (a credit card shows negative: that is what you owe on it)
+  // every account's balance
   root.append(h('div', { class: 'card' }, h('h2', {}, '🏦 Accounts'),
     s.accounts.map((a) => {
       const bal = accountBalance(s, a.id);
@@ -126,7 +126,7 @@ export function render(root) {
   root.append(h('div', { class: 'card stack' }, h('h2', {}, '⚙️ What counts'),
     h('p', { class: 'muted', style: 'margin:0' }, 'An account\'s balance = its starting balance + its income − its expenses. Investments come from the Invest tab. Add or rename accounts in Settings.'),
     s.accounts.map((a, i) => h('label', { class: 'field' }, `${a.name}: starting balance (before your first entry)`, openings[i].el)),
-    h('label', { class: 'field' }, 'Total debts (loans…; a credit card is already counted as an account)', debts),
+    h('label', { class: 'field' }, 'Total debts (loans, credit card balance owed…)', debts),
     h('button', {
       class: 'btn-primary btn-block',
       onClick: () => {

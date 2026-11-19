@@ -20,24 +20,27 @@ export const isTransfer = (t) =>
 /** Auto-priced holding: has a ticker and a number of shares/units, so its value = shares × latest price. */
 export const isAuto = (i) => !!i.ticker && i.shares > 0;
 
-const defaultAccounts = () => [
-  { id: 'cash', name: '💵 Cash', opening: 0 },
-  { id: 'bank', name: '🏦 Bank', opening: 0 },
-  { id: 'card', name: '💳 Credit card', opening: 0 },
+// Accounts are the user's own bank accounts (typed in the first time, picked from a list afterwards).
+// How a payment was made is a separate tag: cash, transfer or credit card.
+const defaultAccounts = () => [{ id: 'main', name: '🏦 Account', opening: 0 }];
+export const METHODS = [
+  { id: 'cash', label: '💵 Cash' },
+  { id: 'transfer', label: '🏦 Transfer' },
+  { id: 'card', label: '💳 Credit card' },
 ];
+export const methodLabel = (id) => (METHODS.find((m) => m.id === id) || { label: '' }).label;
+const LEGACY_ACCOUNTS = { cash: 'cash', bank: 'transfer', card: 'card' }; // the first version of accounts used these as 'accounts'
 
 export const defaults = () => ({
   version: 3,
-  settings: { currency: 'TWD', startDay: 1, autoPrices: true, twelveKey: '', lastPriceRefresh: '', lastAccount: '' },
+  settings: { currency: 'TWD', startDay: 1, autoPrices: true, twelveKey: '', lastPriceRefresh: '', lastAccount: '', lastMethod: '' },
   categories: {
     expense: ['🍜 Food', '🛒 Groceries', '🚌 Transport', '🏠 Housing', '💡 Utilities', '🎬 Fun',
       '👕 Shopping', '💊 Health', '📚 Learning', '🎁 Gifts', '✈️ Travel', INVEST_CATEGORY, '📦 Other'],
     income: ['💼 Salary', '🎯 Bonus', INTEREST, INVEST_OUT_CATEGORY, '💰 Other income'],
   },
-  // Accounts = where money sits / is paid from: cash, a bank account, each credit card… A credit card's balance goes
-  // negative as you spend, which counts against your net worth.
   accounts: defaultAccounts(), // { id, name, opening }
-  // { id, date, type: 'expense'|'income', amount, category, account (id), note, investId?, holdValue?, shares? }
+  // { id, date, type: 'expense'|'income', amount, category, account (id), method ('cash'|'transfer'|'card'|''), note, investId?, holdValue?, shares? }
   // investId = the holding on the Invest page this purchase / cash-out belongs to (Investment / cash-out categories only);
   // holdValue = how much the holding's value went up (purchase) or down (cash-out); shares = units bought / sold.
   transactions: [],
@@ -67,8 +70,10 @@ export function sanitize(raw) {
   if (typeof s.twelveKey === 'string' && /^[\w-]{0,80}$/.test(s.twelveKey)) out.settings.twelveKey = s.twelveKey;
   if (isDate(s.lastPriceRefresh)) out.settings.lastPriceRefresh = s.lastPriceRefresh;
 
-  // accounts (older backups had a single "daily account": its starting balance becomes the first account's)
+  // accounts. Older data: a single "daily account" (its starting balance becomes the account's), or the first version
+  // of accounts where Cash / Bank / Credit card were accounts: those become ONE account, with the old account kept as the payment method.
   const p = raw.profile || {};
+  const rawAccounts = [];
   if (Array.isArray(raw.accounts)) {
     const seen = new Set();
     for (const a of raw.accounts) {
@@ -76,15 +81,26 @@ export function sanitize(raw) {
       const id = str(a && a.id, 40) || uid();
       if (!name || seen.has(id)) continue;
       seen.add(id);
-      out.accounts.push({ id, name, opening: Number.isFinite(num(a.opening)) ? num(a.opening) : 0 });
+      rawAccounts.push({ id, name, opening: Number.isFinite(num(a.opening)) ? num(a.opening) : 0 });
     }
   }
-  if (!out.accounts.length) {
+  const legacy = rawAccounts.length > 0 && rawAccounts.every((a) => LEGACY_ACCOUNTS[a.id]);
+  const accountMap = {}; // old account id -> new account id
+  const methodMap = {};  // old account id -> payment method
+  if (legacy) {
+    out.accounts = defaultAccounts();
+    out.accounts[0].opening = rawAccounts.reduce((a, x) => a + x.opening, 0);
+    rawAccounts.forEach((a) => { accountMap[a.id] = 'main'; methodMap[a.id] = LEGACY_ACCOUNTS[a.id]; });
+  } else if (rawAccounts.length) {
+    out.accounts = rawAccounts;
+  } else {
     out.accounts = defaultAccounts();
     if (Number.isFinite(num(p.openingCash))) out.accounts[0].opening = num(p.openingCash);
   }
   const accountIds = new Set(out.accounts.map((a) => a.id));
-  if (accountIds.has(s.lastAccount)) out.settings.lastAccount = s.lastAccount;
+  const lastAcct = accountMap[s.lastAccount] || s.lastAccount;
+  if (accountIds.has(lastAcct)) out.settings.lastAccount = lastAcct;
+  if (METHODS.some((m) => m.id === s.lastMethod)) out.settings.lastMethod = s.lastMethod;
 
   for (const t of ['expense', 'income']) {
     const list = raw.categories && Array.isArray(raw.categories[t]) ? raw.categories[t] : null;
@@ -101,7 +117,8 @@ export function sanitize(raw) {
     if (t.type === 'income' && category === OLD_INTEREST) category = INTEREST;
     const rec = {
       id: str(t.id, 40) || uid(), date: t.date, type: t.type, amount, category, note: str(t.note, 200),
-      account: accountIds.has(t.account) ? t.account : out.accounts[0].id, // entries from before accounts existed go to the first one
+      account: accountIds.has(accountMap[t.account] || t.account) ? (accountMap[t.account] || t.account) : out.accounts[0].id, // entries from before accounts existed go to the first one
+      method: METHODS.some((m) => m.id === t.method) ? t.method : (methodMap[t.account] || ''),
     };
     if (isTransfer(rec) && t.investId) {
       rec.investId = str(t.investId, 40);
@@ -202,13 +219,22 @@ export function replaceAll(newState) {
 }
 
 // ---- derived numbers shared by Home / Net worth ----
+/** Inside update(): the id of the account with this name (case-insensitive), creating it the first time you type it. */
+export function ensureAccount(st, name) {
+  const clean = str(name, 40).trim();
+  const found = st.accounts.find((a) => a.name.toLowerCase() === clean.toLowerCase());
+  if (found) return found.id;
+  const a = { id: uid(), name: clean, opening: 0 };
+  st.accounts.push(a);
+  return a.id;
+}
 export const accountName = (s, id) => (s.accounts.find((a) => a.id === id) || { name: 'Unknown account' }).name;
-/** One account's balance = its starting balance + its income − its expenses. A credit card ends up negative. */
+/** One account's balance = its starting balance + its income − its expenses (whatever the payment method). */
 export function accountBalance(s, id) {
   const a = s.accounts.find((x) => x.id === id);
   return (a ? a.opening : 0) + s.transactions.reduce((sum, t) => (t.account === id ? sum + (t.type === 'income' ? t.amount : -t.amount) : sum), 0);
 }
-/** All accounts together (cash + banks + credit cards). */
+/** All accounts together. */
 export function cashBalance(s = state) {
   return s.accounts.reduce((sum, a) => sum + a.opening, 0) + s.transactions.reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
 }
@@ -299,9 +325,9 @@ function csv(rows) {
   return '﻿' + rows.map((r) => r.map(safe).join(',')).join('\r\n');
 }
 export function exportCSV() {
-  const rows = [['date', 'account', 'type', 'category', 'amount', 'note']];
+  const rows = [['date', 'account', 'method', 'type', 'category', 'amount', 'note']];
   [...state.transactions].sort((a, b) => a.date.localeCompare(b.date))
-    .forEach((t) => rows.push([t.date, accountName(state, t.account), t.type, t.category, t.amount, t.note]));
+    .forEach((t) => rows.push([t.date, accountName(state, t.account), t.method, t.type, t.category, t.amount, t.note]));
   return csv(rows);
 }
 export function exportInvestmentsCSV() {

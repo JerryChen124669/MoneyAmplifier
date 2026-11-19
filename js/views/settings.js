@@ -31,7 +31,7 @@ export function render(root) {
 
   // ---- accounts: cash, bank accounts, each credit card… ----
   const accountsCard = () => {
-    const nameIn = h('input', { type: 'text', maxlength: '40', placeholder: 'New account, e.g. 💳 Visa', style: 'margin:0' });
+    const nameIn = h('input', { type: 'text', maxlength: '40', placeholder: 'New account, e.g. Fubon Bank', style: 'margin:0' });
     const openIn = h('input', { type: 'number', inputmode: 'decimal', step: 'any', placeholder: 'Starting balance (optional)', style: 'margin:0' });
     const add = () => {
       const name = nameIn.value.trim();
@@ -42,7 +42,7 @@ export function render(root) {
     };
     nameIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
     return h('div', { class: 'card stack' }, h('h2', {}, 'Accounts'),
-      h('p', { class: 'muted', style: 'margin:0' }, 'Pick one when you record an expense or income: cash, a bank account, each credit card. A credit card goes negative as you spend, and that counts against your net worth. Starting balances are on the Profile tab.'),
+      h('p', { class: 'muted', style: 'margin:0' }, 'Your bank accounts. You can also just type a new one when you record an expense or income, and it shows up here and in the suggestions next time. How you paid (cash, transfer or credit card) is chosen per entry. Starting balances are on the Profile tab.'),
       s.accounts.map((a) => h('div', { class: 'row', style: 'padding:6px 0;border-bottom:1px solid var(--line)' },
         h('div', { class: 'grow' }, a.name),
         h('button', { 'aria-label': `Rename ${a.name}`, onClick: () => renameAccount(a) }, 'Rename'),

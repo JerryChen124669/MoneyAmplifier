@@ -1,6 +1,6 @@
 // Shared UI pieces used by several views.
 import { h, money, sum, periodKeyFor, periodLabel, shiftKey, today } from './util.js';
-import { getState, isTransfer, accountName } from './store.js';
+import { getState, isTransfer, accountName, METHODS, methodLabel } from './store.js';
 
 /**
  * What Home, History and Profile are showing (kept while you switch tabs):
@@ -83,6 +83,39 @@ function openMonthPicker(onChange) {
   if (on) on.focus();
 }
 
+/**
+ * Which bank account: a text box that suggests accounts you typed before (like the institution box on the Invest page),
+ * plus one-tap chips for them. Typing a new name creates the account when the entry is saved. Uses f.accountName.
+ */
+export function accountField(f, { label = 'Account' } = {}) {
+  const s = getState();
+  const listId = 'account-suggestions';
+  const same = (name) => f.accountName.trim().toLowerCase() === name.toLowerCase();
+  const chips = s.accounts.map((a) => h('button', {
+    type: 'button', class: 'chip', onClick: () => { f.accountName = a.name; input.value = a.name; sync(); },
+  }, a.name));
+  const sync = () => chips.forEach((c, i) => c.classList.toggle('on', same(s.accounts[i].name)));
+  const input = h('input', {
+    type: 'text', maxlength: '40', list: listId, autocomplete: 'off', placeholder: 'Type your account, e.g. Fubon Bank',
+    value: f.accountName, onInput: (e) => { f.accountName = e.target.value; sync(); },
+  });
+  sync();
+  return h('div', { class: 'stack' },
+    h('label', { class: 'field' }, label, input, h('datalist', { id: listId }, s.accounts.map((a) => h('option', { value: a.name })))),
+    s.accounts.length ? h('div', { class: 'chips' }, chips) : null);
+}
+
+/** How it was paid: Cash / Transfer / Credit card (income: Cash / Transfer). Uses f.method; tap the chosen one again to clear it. */
+export function methodField(f, { income = false, label = 'How was it paid?' } = {}) {
+  const list = income ? METHODS.filter((m) => m.id !== 'card') : METHODS;
+  const chips = list.map((m) => h('button', {
+    type: 'button', class: 'chip', onClick: () => { f.method = f.method === m.id ? '' : m.id; sync(); },
+  }, m.label));
+  const sync = () => chips.forEach((c, i) => { c.classList.toggle('on', f.method === list[i].id); c.setAttribute('aria-pressed', f.method === list[i].id ? 'true' : 'false'); });
+  sync();
+  return h('div', {}, h('div', { class: 'muted', style: 'font-weight:700;margin:2px 0 6px' }, label), h('div', { class: 'chips' }, chips));
+}
+
 /** Second line of an ordinary transaction row: its note. */
 export const txNote = (t) => t.note || '';
 
@@ -103,7 +136,7 @@ export function flowRow(t, { meta = '' } = {}) {
     h('div', { class: 'flow-name' }, x.label),
     h('div', { class: `flow-amt ${x.amount < 0 ? 'expense' : 'income'}` }, (x.amount < 0 ? '−' : '+') + money(Math.abs(x.amount), currency)));
   const [from, to] = buy ? [cash, inv] : [inv, cash];
-  const extra = [meta, t.note].filter(Boolean).join(' · ');
+  const extra = [meta, methodLabel(t.method), t.note].filter(Boolean).join(' · ');
   return h('a', { class: 'tx transfer flow', href: `#/add/${t.id}` },
     side(from, 'from'), h('span', { class: 'flow-arrow', 'aria-hidden': 'true' }, '→'), side(to, 'to'),
     extra ? h('div', { class: 'flow-meta muted' }, extra) : null);
@@ -113,7 +146,7 @@ export function txRow(t) {
   const { currency } = getState().settings;
   const sign = t.type === 'income' ? '+' : '−';
   if (isTransfer(t)) return flowRow(t);
-  const sub = [accountName(getState(), t.account), txNote(t)].filter(Boolean).join(' · ');
+  const sub = [accountName(getState(), t.account), methodLabel(t.method), txNote(t)].filter(Boolean).join(' · ');
   return h('a', { class: 'tx', href: `#/add/${t.id}` },
     h('div', { class: 'grow' },
       h('div', { class: 'name' }, t.category || 'Uncategorised'),
