@@ -24,13 +24,15 @@
   --shadow: 0 6px 20px rgba(122, 75, 42, .10);
   --brand-rgb: 168, 105, 58;
   /* Shiba colours used by the tab bar */
-  --dog: #e3ab6e;
+  --dog: #e8a85f;
   --dog-edge: #b9803f;
-  --dog-cream: #fff3df;
+  --dog-cream: #fffaf1;
   --dog-ink: #5a3820;
   --dog-pad: #f2d6ae;
   --dog-deep: #d3965a;
-  --dog-belly: #f5d9a8;
+  --dog-shade: #f1dfc6;
+  --dog-crease: #f6d3c0;
+  --dog-line: #7a4a2a;
   --dog-skin: #e9a99a;
   --dog-bean: #eaa496;
   --bar-w: min(calc(100vw - 24px), 420px);
@@ -42,7 +44,7 @@
     --bg: #2b2018; --dot: #33261c; --surface: #3a2c21; --text: #f6e8d8; --muted: #c4a88e; --line: #50402f;
     --brand: #e0a46c; --brand-soft: #4d3626; --on-brand: #2a1608; --brand-rgb: 224, 164, 108;
     --income: #8fd6a0; --expense: #f0937e; --danger: #f08a7c;
-    --dog: #c98e55; --dog-edge: #8a5a30; --dog-cream: #f1dcc0; --dog-pad: #dfbf94; --dog-skin: #d9937f; --dog-bean: #d98f7e; --dog-deep: #ac763f; --dog-belly: #e6c797;
+    --dog: #c98e55; --dog-edge: #8a5a30; --dog-cream: #f1dcc0; --dog-pad: #dfbf94; --dog-skin: #d9937f; --dog-bean: #d98f7e; --dog-deep: #ac763f; --dog-shade: #cdb594; --dog-crease: #d4a595; --dog-line: #a8703a;
     --shadow: none; color-scheme: dark;
   }
 }
@@ -78,15 +80,15 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
   transform-origin: 50% 100%;
 }
 .tabbar .butt { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 5px 8px rgba(var(--brand-rgb), .25)); }
-.butt .paw { fill: var(--dog-cream); stroke: var(--dog-edge); stroke-width: 2; }
-.butt .pad { fill: var(--dog-pad); stroke: var(--dog-edge); stroke-width: 1.6; }
-.butt .bean { fill: var(--dog-bean); stroke: var(--dog-edge); stroke-width: 1.6; }
-.butt .rump { fill: var(--dog-deep); stroke: var(--dog-edge); stroke-width: 2; stroke-linejoin: round; }
-.butt .cheek { fill: var(--dog); stroke: none; }
-.butt .shine { fill: none; stroke: var(--dog-cream); stroke-width: 3.5; stroke-linecap: round; opacity: .5; }
-.butt .fold { fill: none; stroke: var(--dog-deep); stroke-width: 2.4; stroke-linecap: round; opacity: .55; }
-.butt .belly-1 { fill: var(--dog-belly); stroke: var(--dog-edge); stroke-width: 2; stroke-linejoin: round; }
-.butt .belly-2 { fill: var(--dog-cream); stroke: none; }
+.butt .paw { fill: var(--dog-cream); stroke: var(--dog-line); stroke-width: 2.2; }
+.butt .pad { fill: var(--dog-pad); stroke: var(--dog-line); stroke-width: 1.6; }
+.butt .bean { fill: var(--dog-bean); stroke: var(--dog-line); stroke-width: 1.6; }
+.butt .rump { fill: var(--dog); stroke: var(--dog-line); stroke-width: 2.4; stroke-linejoin: round; }
+.butt .lobe { fill: url(#lobeFill); stroke: var(--dog-line); stroke-width: 2.4; stroke-linejoin: round; }
+.butt .lobe-a { stop-color: var(--dog-cream); }
+.butt .lobe-b { stop-color: var(--dog-shade); }
+.butt .gloss { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; opacity: .7; }
+.butt .crease { fill: var(--dog-crease); stroke: none; }
 .tabbar a {
   position: absolute; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
   left: calc((var(--cx) - var(--w) / 2) * var(--u)); top: calc(var(--ty) * var(--v)); width: calc(var(--w) * var(--u)); height: calc(var(--th) * var(--v));
@@ -112,8 +114,9 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .hole .plus { fill: none; stroke: #5a2f22; stroke-width: 3.2; stroke-linecap: round; }
 .tabbar a.tab-add.active .skin { stroke: #5a2f22; stroke-width: 2.6; }
 .tabbar .tail { position: absolute; left: 50%; top: calc(-44 * var(--v)); width: calc(40 * var(--u) * 1.2); height: calc(46 * var(--v) * 1.2); margin-left: calc(-20 * var(--u) * 1.2); overflow: visible; transform-origin: 50% 96%; }
-.tail .tuft { stroke: var(--dog-edge); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
-.tail .tip-a { stop-color: #fffaf0; }
+.tail .tuft { stroke: var(--dog-line); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.tail .puff { fill: none; stroke: var(--dog-line); stroke-width: 1.8; stroke-linecap: round; opacity: .4; }
+.tail .tip-a { stop-color: var(--dog-cream); }
 .tail .tip-b { stop-color: var(--dog); }
 
 /* tapping any tab: the tail wags, the bum bounces and the hole squeezes */
