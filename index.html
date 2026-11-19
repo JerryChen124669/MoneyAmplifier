@@ -27,33 +27,38 @@
   <div id="toast" role="status" aria-live="polite"></div>
 
   <nav class="tabbar" aria-label="Main">
-    <!-- the back end of a Shiba: round bottom, cream fur under the tail, two cheeks -->
-    <svg class="butt" viewBox="0 0 360 96" preserveAspectRatio="none" aria-hidden="true">
-      <path class="dog-body" d="M2 82 V72 C2 46 26 30 62 28 C100 26 130 32 150 30 C165 28 172 24 180 24 C188 24 195 28 210 30 C230 32 260 26 298 28 C334 30 358 46 358 72 V82 Q358 96 344 96 H16 Q2 96 2 82 Z"/>
-      <ellipse class="dog-cream" cx="180" cy="62" rx="46" ry="30"/>
-      <path class="dog-crease" d="M124 46 C112 62 114 80 128 92 M236 46 C248 62 246 80 232 92"/>
-      <!-- hind paws peeking out underneath -->
-      <g class="paw"><ellipse cx="62" cy="97" rx="19" ry="8"/><path d="M55 93 v7 M62 91 v9 M69 93 v7"/></g>
-      <g class="paw"><ellipse cx="298" cy="97" rx="19" ry="8"/><path d="M291 93 v7 M298 91 v9 M305 93 v7"/></g>
+    <!-- a Shiba seen from behind: back, two cheeks, lighter belly fur with stray hairs, two hind paws -->
+    <svg class="butt" viewBox="0 0 360 112" preserveAspectRatio="none" aria-hidden="true">
+      
+      <path class="dog-body" d="M10 70 C10 28 60 8 180 8 C300 8 350 28 350 70 V92 Q350 112 330 112 H30 Q10 112 10 92 Z"/>
+      <circle class="dog-body" cx="110" cy="56" r="46"/>
+      <circle class="dog-body" cx="250" cy="56" r="46"/>
+      <path class="shine" d="M82 38 C90 29 101 26 112 26 M278 38 C270 29 259 26 248 26"/>
+      <!-- lighter lower-belly fur under the bum-hole -->
+      <path class="dog-cream" d="M168 46 C160 66 148 92 144 112 H216 C212 92 200 66 192 46 Z"/>
+      <path class="hair-cream" d="M163 58 l-9 -5 M157 70 l-9 -3 M152 84 l-10 -2 M147 98 l-9 -1 M197 58 l9 -5 M203 70 l9 -3 M208 84 l10 -2 M213 98 l9 -1"/>
+      <path class="hair-tan" d="M165 62 l8 -3 M159 76 l9 -2 M154 90 l9 -1 M150 104 l9 0 M195 62 l-8 -3 M201 76 l-9 -2 M206 90 l-9 -1 M210 104 l-9 0"/>
+      <path class="hair-tan" d="M178 74 l-3 8 M185 80 l2 9 M176 92 l-2 8 M184 98 l1 8"/>
+      <!-- hind paws -->
+      <ellipse class="paw" cx="40" cy="90" rx="36" ry="21"/>
+      <ellipse class="paw" cx="320" cy="90" rx="36" ry="21"/>
+      <path class="toes" d="M28 101 v7 M40 103 v7 M52 101 v7 M308 101 v7 M320 103 v7 M332 101 v7"/>
     </svg>
     <a href="#/home" data-tab="home">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span>
     </a>
-    <a href="#/history" data-tab="history">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>History</span>
-    </a>
-    <a href="#/add" data-tab="add" class="tab-add" aria-label="Add">
-      <!-- the curled tail is the Add button -->
-      <svg class="tail" viewBox="0 0 64 64" aria-hidden="true">
-        <circle class="tail-body" cx="32" cy="32" r="28"/>
-        <path class="tail-curl" d="M52 40 C48 52 36 58 24 55"/>
-        <circle class="tail-cream" cx="32" cy="30" r="17"/>
-        <path class="tail-plus" d="M32 22 v16 M24 30 h16"/>
-      </svg>
-      <span>Add</span>
-    </a>
     <a href="#/invest" data-tab="invest">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span>Invest</span>
+    </a>
+    <a href="#/add" data-tab="add" class="tab-add" aria-label="Add">
+      <!-- the tail: a small tuft sticking up -->
+      <svg class="tail" viewBox="0 0 36 44" aria-hidden="true"><path class="tuft" d="M6 44 C3 28 12 12 25 2 C24 14 35 27 31 44"/></svg>
+      <!-- the "+" is the bum-hole -->
+      <svg class="hole" viewBox="0 0 30 30" aria-hidden="true"><circle class="skin" cx="15" cy="15" r="14"/><path class="plus" d="M15 8 v14 M8 15 h14"/></svg>
+      <span>Add</span>
+    </a>
+    <a href="#/history" data-tab="history">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>History</span>
     </a>
     <a href="#/wealth" data-tab="wealth">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Net worth</span>
