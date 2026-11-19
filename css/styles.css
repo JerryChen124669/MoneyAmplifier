@@ -27,7 +27,9 @@
   --dog: #e8a85f;
   --dog-edge: #b9803f;
   --dog-cream: #fffaf1;
-  --dog-ink: #5a3820;
+  --dog-ink: #4a2c18;
+  --dog-ink-soft: #7d5b40;
+  --dog-shadow: #c48a70;
   --dog-pad: #f2d6ae;
   --dog-deep: #d3965a;
   --dog-shade: #f1dfc6;
@@ -44,7 +46,7 @@
     --bg: #2b2018; --dot: #33261c; --surface: #3a2c21; --text: #f6e8d8; --muted: #c4a88e; --line: #50402f;
     --brand: #e0a46c; --brand-soft: #4d3626; --on-brand: #2a1608; --brand-rgb: 224, 164, 108;
     --income: #8fd6a0; --expense: #f0937e; --danger: #f08a7c;
-    --dog: #c98e55; --dog-edge: #8a5a30; --dog-cream: #f1dcc0; --dog-pad: #dfbf94; --dog-skin: #d9937f; --dog-bean: #d98f7e; --dog-deep: #ac763f; --dog-shade: #cdb594; --dog-crease: #d4a595; --dog-line: #a8703a;
+    --dog: #c98e55; --dog-edge: #8a5a30; --dog-cream: #f1dcc0; --dog-pad: #dfbf94; --dog-skin: #d9937f; --dog-bean: #d98f7e; --dog-deep: #ac763f; --dog-shade: #cdb594; --dog-crease: #d4a595; --dog-line: #a8703a; --dog-ink-soft: #7d5b40; --dog-shadow: #b8825f;
     --shadow: none; color-scheme: dark;
   }
 }
@@ -84,42 +86,41 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .butt .pad { fill: var(--dog-pad); stroke: var(--dog-line); stroke-width: 1.6; }
 .butt .bean { fill: var(--dog-bean); stroke: var(--dog-line); stroke-width: 1.6; }
 .butt .rump { fill: var(--dog); stroke: var(--dog-line); stroke-width: 2.4; stroke-linejoin: round; }
-.butt .lobe { fill: url(#lobeFill); stroke: var(--dog-line); stroke-width: 2.4; stroke-linejoin: round; }
+.butt .lobe { fill: url(#lobeFill); stroke: none; }
 .butt .lobe-a { stop-color: var(--dog-cream); }
 .butt .lobe-b { stop-color: var(--dog-shade); }
 .butt .gloss { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; opacity: .7; }
-.butt .crease { fill: var(--dog-crease); stroke: none; }
+.butt .belly { fill: var(--dog-crease); stroke: none; }
+.butt .cleft { fill: url(#cleftFill); stroke: none; }
+.butt .cl-a { stop-color: var(--dog-shadow); stop-opacity: 0; }
+.butt .cl-b { stop-color: var(--dog-shadow); stop-opacity: .5; }
 .tabbar a {
   position: absolute; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
   left: calc((var(--cx) - var(--w) / 2) * var(--u)); top: calc(var(--ty) * var(--v)); width: calc(var(--w) * var(--u)); height: calc(var(--th) * var(--v));
-  font-size: .62rem; font-weight: 800; line-height: 1.2; color: var(--dog-ink); text-decoration: none; opacity: .88;
+  font-size: .62rem; font-weight: 800; line-height: 1.2; color: var(--dog-ink-soft); text-decoration: none;
 }
 .tabbar a[data-tab=invest]  { --cx: 50;  --w: 50; --ty: 57; --th: 28; }
 .tabbar a[data-tab=home]    { --cx: 118; --w: 56; --ty: 28; --th: 40; }
-.tabbar a[data-tab=add]     { --cx: 180; --w: 48; --ty: 8;  --th: 48; opacity: 1; }
+.tabbar a[data-tab=add]     { --cx: 180; --w: 40; --ty: 24; --th: 40; }
 .tabbar a[data-tab=history] { --cx: 242; --w: 56; --ty: 28; --th: 40; }
 .tabbar a[data-tab=wealth]  { --cx: 310; --w: 50; --ty: 57; --th: 28; }
 .tabbar a > svg:not(.tail):not(.hole) { width: 20px; height: 20px; }
 .tabbar a[data-tab=invest] > svg, .tabbar a[data-tab=wealth] > svg { width: 15px; height: 15px; }
-.tabbar a::before { content: ''; position: absolute; inset: -2px -3px; border-radius: 14px; background: rgba(90, 56, 32, .18); opacity: 0; transform: scale(.85); transition: .2s; z-index: -1; }
-.tabbar a.active { opacity: 1; }
-.tabbar a.active::before { opacity: 1; transform: none; }
+.tabbar a.active { color: var(--dog-ink); }
 .tabbar a:active { transform: scale(.94); }
 
 /* the "+" is the bum-hole; the tail is a little tuft sticking up behind it */
-.tabbar a.tab-add::before { display: none; }
 .tabbar .hole { width: 100%; height: 100%; overflow: visible; position: relative; }
-.hole .skin { fill: var(--dog-skin); stroke: var(--dog-edge); stroke-width: 2; }
-.hole .ring { fill: none; stroke: var(--dog-edge); stroke-width: 1.4; opacity: .35; }
-.hole .plus { fill: none; stroke: #5a2f22; stroke-width: 3.2; stroke-linecap: round; }
-.tabbar a.tab-add.active .skin { stroke: #5a2f22; stroke-width: 2.6; }
-.tabbar .tail { position: absolute; left: 50%; top: calc(-44 * var(--v)); width: calc(40 * var(--u) * 1.2); height: calc(46 * var(--v) * 1.2); margin-left: calc(-20 * var(--u) * 1.2); overflow: visible; transform-origin: 50% 96%; }
-.tail .tuft { stroke: var(--dog-line); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
-.tail .puff { fill: none; stroke: var(--dog-line); stroke-width: 1.8; stroke-linecap: round; opacity: .4; }
-.tail .tip-a { stop-color: var(--dog-cream); }
-.tail .tip-b { stop-color: var(--dog); }
-
-/* tapping any tab: the tail wags, the bum bounces and the hole squeezes */
+.hole circle, .hole ellipse { stroke: none; }
+.hole .plus { fill: none; stroke: #5a2f22; stroke-width: 3; stroke-linecap: round; }
+.tabbar .tail { position: absolute; left: 50%; top: calc(-40 * var(--v)); width: calc(60 * var(--u)); height: calc(47 * var(--v)); margin-left: calc(-30 * var(--u)); overflow: visible; transform-origin: 50% 90%; }
+.tail .tuft { fill: none; stroke: var(--dog-line); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+.tail .tfill { stroke: none; }
+.tail .tw { stop-color: var(--dog-cream); }
+.tail .tstripe { fill: var(--dog); stroke: none; }
+.tail rect { stroke: none; }
+.tail .tt { stop-color: var(--dog); }
+.tail .tgloss { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; opacity: .8; }/* tapping any tab: the tail wags, the bum bounces and the hole squeezes */
 .tabbar.wag { animation: butt-bounce .55s cubic-bezier(.3, .7, .4, 1); }
 .tabbar.wag .tail { animation: tail-wag .7s ease-in-out; }
 .tabbar.wag .hole { animation: hole-squeeze .55s ease-in-out; transform-origin: 50% 50%; transform-box: fill-box; }

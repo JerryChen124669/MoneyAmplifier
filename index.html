@@ -31,6 +31,7 @@
     <svg class="butt" viewBox="0 0 360 104" preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="lobeFill" x1="0" y1="0" x2="0" y2="1"><stop class="lobe-a" offset="0.35"/><stop class="lobe-b" offset="1"/></linearGradient>
+        <linearGradient id="cleftFill" x1="0" y1="0" x2="1" y2="0"><stop class="cl-a" offset="0"/><stop class="cl-b" offset="0.5"/><stop class="cl-a" offset="1"/></linearGradient>
       </defs>
       <!-- hind paws: sole pad + toe beans -->
       <ellipse class="paw" cx="42" cy="70" rx="42" ry="29"/>
@@ -41,12 +42,13 @@
       <circle class="bean" cx="343" cy="59" r="4.5"/><circle class="bean" cx="351" cy="74" r="4.5"/><circle class="bean" cx="339" cy="86" r="4.5"/>
       <!-- tan "saddle" on the back: its top sweeps down into the tail valley -->
       <path class="rump" d="M66 64 C64 32 88 6 122 5 C142 5 160 9 170 19 C175 23 185 23 190 19 C200 9 218 5 238 5 C272 6 296 32 294 64 C293 86 276 101 246 101 H114 C84 101 67 86 66 64 Z"/>
-      <!-- the cleft between the cheeks (pink), flaring into the pale underside -->
-      <path class="crease" d="M174 36 H186 V86 C186 92 194 97 198 100 H162 C166 97 174 92 174 86 Z"/>
-      <!-- white cheeks -->
-      <path class="lobe" d="M72 64 C70 40 88 22 116 21 C140 21 160 28 172 42 C176 47 176 54 176 62 L176 86 C176 94 172 98 164 99 H118 C90 99 74 86 72 64 Z"/>
-      <path class="lobe" d="M288 64 C290 40 272 22 244 21 C220 21 200 28 188 42 C184 47 184 54 184 62 L184 86 C184 94 188 98 196 99 H242 C270 99 286 86 288 64 Z"/>
+      <!-- pale underside, seen in the notch between the cheeks -->
+      <rect class="belly" x="156" y="78" width="48" height="22"/>
+      <!-- white cheeks: one shape, no inner outline -->
+      <path class="lobe" d="M72 64 C70 40 88 22 116 21 C140 21 160 29 171 43 C175 48 178 51 180 54 C182 51 185 48 189 43 C200 29 220 21 244 21 C272 22 290 40 288 64 C286 86 270 99 242 99 H198 C190 99 183 93 180 84 C177 93 170 99 162 99 H118 C90 99 74 86 72 64 Z"/>
       <path class="gloss" d="M88 44 C93 34 103 29 114 29 M272 44 C267 34 257 29 246 29"/>
+      <!-- the cleft and underside are shaded, not drawn with a line -->
+      <path class="cleft" d="M180 54 C166 66 164 88 170 100 H190 C196 88 194 66 180 54 Z"/>
     </svg>
     <a href="#/invest" data-tab="invest">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span>Invest</span>
@@ -56,13 +58,28 @@
     </a>
     <a href="#/add" data-tab="add" class="tab-add" aria-label="Add">
       <!-- tail tuft sticking up, behind the bum-hole -->
-      <svg class="tail" viewBox="0 0 40 46" aria-hidden="true">
-        <defs><linearGradient id="tailtip" x1="0" y1="0" x2="0" y2="1"><stop class="tip-a" offset="0.55"/><stop class="tip-b" offset="0.55"/></linearGradient></defs>
-        <path class="tuft" fill="url(#tailtip)" d="M9 45 C6 37 8 30 13 25 C9 16 14 6 22 3 C31 1 37 9 33 17 C32 22 31 27 33 32 C35 37 34 41 32 45"/>
-        <path class="puff" d="M16 21 C20 24 25 24 29 20"/>
+      <svg class="tail" viewBox="0 0 46 36" aria-hidden="true">
+        <defs>
+          <clipPath id="tailClip"><path d="M4 36 C3 29 7 24 11 21 C8 13 14 5 24 5 C34 5 41 12 38 20 C41 24 43 30 42 36 Z"/></clipPath>
+          <linearGradient id="tailShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0.4" stop-color="#b98765" stop-opacity="0"/><stop offset="1" stop-color="#b98765" stop-opacity="0.4"/></linearGradient>
+          <linearGradient id="tailFill" x1="0" y1="0" x2="0" y2="1"><stop class="tw" offset="0.5"/><stop class="tt" offset="0.88"/></linearGradient>
+        </defs>
+        <g clip-path="url(#tailClip)">
+          <rect class="tfill" width="46" height="36" fill="url(#tailFill)"/>
+          <path class="tstripe" d="M0 36 C1 25 7 17 15 15 C14 22 14 30 16 36 Z"/>
+          <rect width="46" height="36" fill="url(#tailShade)"/>
+          
+        </g>
+        <path class="tuft" d="M4.6 31 C5 27 8 23.5 11 21 C8 13 14 5 24 5 C34 5 41 12 38 20 C40.5 23 41.5 27 41.4 31"/>
+        <path class="tgloss" d="M17 14 C19 10 22 8.5 26 8.5"/>
       </svg>
       <!-- the "+" is the bum-hole -->
-      <svg class="hole" viewBox="0 0 48 48" aria-hidden="true"><circle class="skin" cx="24" cy="24" r="22"/><circle class="ring" cx="24" cy="24" r="15"/><path class="plus" d="M24 14 v20 M14 24 h20"/></svg>
+      <svg class="hole" viewBox="0 0 40 40" aria-hidden="true">
+        <defs><radialGradient id="holeShade"><stop offset="0" stop-color="#b9695a" stop-opacity="0.8"/><stop offset="0.55" stop-color="#cc8a76" stop-opacity="0.45"/><stop offset="1" stop-color="#d9a290" stop-opacity="0"/></radialGradient></defs>
+        <circle cx="20" cy="20" r="19" fill="url(#holeShade)"/>
+        <ellipse cx="27" cy="29" rx="6.5" ry="2.6" transform="rotate(-38 27 29)" fill="#fff" opacity="0.75"/>
+        <path class="plus" d="M20 12 v16 M12 20 h16"/>
+      </svg>
     </a>
     <a href="#/history" data-tab="history">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>History</span>
