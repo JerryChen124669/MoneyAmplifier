@@ -1,9 +1,10 @@
 // Investments: stocks, ETFs, bonds, funds… each with a name, current value and the institution holding it.
-// Adding one records the purchase as an Expense; "Buy more" and "Cash out" (Add page) keep cash and holdings in step.
+// Money moves between your daily account and a holding in three ways, all recorded as normal Expense / Income entries:
+//   + Add investment (first purchase), + Buy more, and 💵 Cash out. Edits and deletes are undone on the holding too.
 // Holdings with a ticker + shares are re-priced automatically (see prices.js).
 import { h, uid, today, money, sum } from '../util.js';
-import { getState, update, commitTx, INVEST_TYPES, TYPE_EMOJI, INVEST_CATEGORY, investTotal, isAuto } from '../store.js';
-import { toast, empty, donut } from '../components.js';
+import { getState, update, commitTx, INVEST_TYPES, TYPE_EMOJI, INVEST_CATEGORY, INVEST_OUT_CATEGORY, investTotal, isAuto, isTransfer } from '../store.js';
+import { toast, empty, donut, flowText } from '../components.js';
 import { refreshPrices } from '../prices.js';
 
 export const title = 'Investments';
@@ -14,9 +15,27 @@ export function render(root) {
   const s = getState();
   const { currency } = s.settings;
   const total = investTotal(s);
-  const view = { group: 'type', editing: null }; // editing: null | 'new' | <id>
+  // mode: null | 'new' | 'edit' | 'buy' | 'sell'; f holds the form fields so they survive a redraw
+  const view = { group: 'type', mode: null, id: null, f: null };
   let chart = null;
   const rerender = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
+  const held = () => s.investments.filter((i) => i.amount > 0);
+
+  function open(mode, id = null) {
+    view.mode = mode;
+    view.id = id;
+    if (mode === 'buy' || mode === 'sell') {
+      view.f = { id: id || (mode === 'sell' ? (held()[0] || {}).id : (s.investments[0] || {}).id), amount: '', removed: '', shares: '', date: today(), note: '' };
+    } else if (mode === 'new') {
+      view.f = { name: '', type: 'Stock', institution: '', ticker: '', shares: '', amount: '', date: today(), record: true };
+    } else if (mode === 'edit') {
+      const i = s.investments.find((x) => x.id === id);
+      view.f = { ...i, amount: String(i.amount), shares: i.shares ? String(i.shares) : '' };
+    }
+    draw();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  const close = () => { view.mode = null; view.f = null; draw(); };
 
   function draw() {
     if (chart) chart.destroy();
@@ -41,8 +60,13 @@ export function render(root) {
         + (auto.length ? ` · ${auto.length} auto-priced${lastPriced ? ', last updated ' + lastPriced : ''}` : '')),
       auto.length ? refreshBtn : null));
 
-    if (view.editing) root.append(formCard());
-    else root.append(h('button', { class: 'btn-primary btn-block', style: 'margin-bottom:14px', onClick: () => { view.editing = 'new'; draw(); } }, '+ Add investment'));
+    if (view.mode === 'new' || view.mode === 'edit') root.append(editCard());
+    else if (view.mode === 'buy' || view.mode === 'sell') root.append(moveCard());
+    else {
+      root.append(h('div', { class: 'row', style: 'margin-bottom:14px' },
+        h('button', { class: 'btn-primary grow', onClick: () => open('new') }, '+ Add investment'),
+        h('button', { class: 'grow', disabled: !held().length, onClick: () => open('sell') }, '💵 Cash out')));
+    }
 
     if (!s.investments.length) {
       root.append(h('div', { class: 'card' }, empty('No investments yet. Add a stock, ETF, bond, fund…')));
@@ -62,28 +86,93 @@ export function render(root) {
           h('button', { class: view.group === k ? 'on' : '', onClick: () => { view.group = k; draw(); } }, label))),
       chart ? chart.el : empty('All holdings are worth 0.')));
 
-    // list, grouped by institution
+    // list, grouped by institution; every holding has its own Buy more / Cash out buttons
     const byInst = {};
     s.investments.forEach((i) => (byInst[i.institution || 'No institution'] ||= []).push(i));
     root.append(h('h2', { class: 'section-title' }, '🥎 Holdings'));
     Object.entries(byInst).sort((a, b) => sum(b[1], (x) => x.amount) - sum(a[1], (x) => x.amount)).forEach(([inst, items]) => {
       root.append(h('div', { class: 'day-head' }, h('span', {}, inst), h('span', {}, money(sum(items, (x) => x.amount), currency))),
         h('div', { class: 'card', style: 'padding:4px 16px;margin-bottom:0' },
-          [...items].sort((a, b) => b.amount - a.amount).map((i) => h('button', { class: `tx tx-btn${i.amount <= 0 ? ' sold-out' : ''}`, onClick: () => { view.editing = i.id; draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); } },
-            h('div', { class: 'grow' },
-              h('div', { class: 'name' }, `${TYPE_EMOJI[i.type]} ${i.name}${i.amount <= 0 ? ' · sold out' : ''}`),
-              h('div', { class: 'muted' }, isAuto(i) && i.price
-                ? `${i.shares} × ${i.price}${i.priceCur ? ' ' + i.priceCur : ''} · ${i.priceDate}`
-                : `${i.type} · updated ${i.updated}`)),
-            h('div', { class: 'amt' }, money(i.amount, currency))))));
+          [...items].sort((a, b) => b.amount - a.amount).map((i) => h('div', { class: `holding${i.amount <= 0 ? ' sold-out' : ''}` },
+            h('button', { class: 'tx tx-btn', onClick: () => open('edit', i.id) },
+              h('div', { class: 'grow' },
+                h('div', { class: 'name' }, `${TYPE_EMOJI[i.type]} ${i.name}${i.amount <= 0 ? ' · sold out' : ''}`),
+                h('div', { class: 'muted' }, isAuto(i) && i.price
+                  ? `${i.shares} × ${i.price}${i.priceCur ? ' ' + i.priceCur : ''} · ${i.priceDate}`
+                  : `${i.type} · updated ${i.updated}`)),
+              h('div', { class: 'amt' }, money(i.amount, currency))),
+            h('div', { class: 'actions' },
+              h('button', { class: 'mini', onClick: () => open('buy', i.id) }, '＋ Buy more'),
+              i.amount > 0 ? h('button', { class: 'mini', onClick: () => open('sell', i.id) }, '💵 Cash out') : null)))));
     });
+
+    // recent money in / out
+    const moves = s.transactions.filter(isTransfer).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+    root.append(h('h2', { class: 'section-title' }, '🦴 Cash in / out'),
+      h('div', { class: 'card', style: 'margin-top:8px' },
+        moves.length ? moves.map((t) => h('a', { class: 'tx transfer', href: `#/add/${t.id}` },
+          h('div', { class: 'grow name' }, flowText(t), h('span', { class: 'muted' }, ` · ${t.date}${t.note ? ' · ' + t.note : ''}`)),
+          h('div', { class: 'amt flow' }, (t.type === 'income' ? '+' : '−') + money(t.amount, currency))))
+          : empty('Nothing yet. Buy more or cash out and it shows up here.'),
+        moves.length ? h('a', { href: '#/history', class: 'muted' }, 'See all in History →') : null));
   }
 
-  function formCard() {
-    const existing = view.editing === 'new' ? null : s.investments.find((i) => i.id === view.editing);
-    const f = existing
-      ? { ...existing, amount: String(existing.amount), shares: existing.shares ? String(existing.shares) : '' }
-      : { name: '', type: 'Stock', institution: '', ticker: '', shares: '', amount: '', date: today(), record: true };
+  // ---- Buy more / Cash out ----
+  function moveCard() {
+    const sell = view.mode === 'sell';
+    const f = view.f;
+    const choices = sell ? held() : s.investments;
+    const hold = s.investments.find((i) => i.id === f.id);
+    const label = (i) => `${TYPE_EMOJI[i.type]} ${i.name}${i.institution ? ' · ' + i.institution : ''} (${money(i.amount, currency)})`;
+
+    const save = () => {
+      const amount = numOf(f.amount);
+      if (!hold) return toast('Pick a holding');
+      if (!(amount > 0)) return toast(sell ? 'Enter the cash you received' : 'Enter the amount you paid');
+      const base = { id: uid(), amount, date: f.date || today(), note: f.note.trim() };
+      if (sell) {
+        const removed = Math.min(f.removed.trim() ? numOf(f.removed) : amount, hold.amount);
+        if (!(removed > 0)) return toast('Nothing left in that holding to take off');
+        let shares = numOf(f.shares);
+        if (!(shares > 0)) shares = hold.shares > 0 && hold.amount > 0 ? hold.shares * Math.min(1, removed / hold.amount) : 0;
+        const rec = { ...base, type: 'income', category: INVEST_OUT_CATEGORY };
+        update((st) => commitTx(st, rec, null, { pick: { id: hold.id }, holdValue: removed, shares }), { silent: true });
+        toast('Cashed out! Added to Income ✨');
+      } else {
+        const shares = numOf(f.shares);
+        const rec = { ...base, type: 'expense', category: INVEST_CATEGORY };
+        update((st) => commitTx(st, rec, null, { pick: { id: hold.id }, holdValue: amount, shares: shares > 0 ? shares : 0 }), { silent: true });
+        toast('Saved! Added to Expenses ✨');
+      }
+      rerender();
+    };
+
+    return h('div', { class: 'card stack' },
+      h('h2', {}, sell ? '💵 Cash out' : '＋ Buy more'),
+      h('p', { class: 'muted', style: 'margin:0' }, sell
+        ? 'The cash you receive goes into your daily account as Income, and the value you take off comes out of the holding. If you got more than it was worth, the difference is your profit.'
+        : 'The amount you pay comes out of your daily account as an Expense and goes into the holding, so your net worth stays the same.'),
+      h('label', { class: 'field' }, 'Holding',
+        h('select', { value: f.id, onChange: (e) => { f.id = e.target.value; draw(); } }, choices.map((i) => h('option', { value: i.id }, label(i))))),
+      h('label', { class: 'field' }, sell ? 'Cash received' : 'Amount paid',
+        h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.amount, onInput: (e) => { f.amount = e.target.value; } })),
+      sell ? h('label', { class: 'field' }, 'Value taken off the holding (blank = same as the cash received)',
+        h('div', { class: 'row' },
+          h('input', { type: 'text', inputmode: 'decimal', placeholder: 'same as cash received', style: 'margin:0', value: f.removed, onInput: (e) => { f.removed = e.target.value; } }),
+          h('button', { type: 'button', onClick: () => { f.removed = String(hold ? hold.amount : ''); draw(); } }, 'All'))) : null,
+      !sell || (hold && hold.shares > 0) ? h('label', { class: 'field' },
+        sell ? `Shares / units sold (blank = in proportion; you hold ${hold.shares})` : 'Shares / units bought (optional)',
+        h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.shares, onInput: (e) => { f.shares = e.target.value; } })) : null,
+      h('label', { class: 'field' }, 'Date', h('input', { type: 'date', value: f.date, onChange: (e) => { f.date = e.target.value; } })),
+      h('label', { class: 'field' }, 'Note (optional)', h('input', { type: 'text', maxlength: '200', value: f.note, onInput: (e) => { f.note = e.target.value; } })),
+      h('button', { class: 'btn-primary btn-block', onClick: save }, sell ? 'Cash out' : 'Save'),
+      h('button', { class: 'btn-block', onClick: close }, 'Cancel'));
+  }
+
+  // ---- add / edit a holding ----
+  function editCard() {
+    const existing = view.mode === 'edit' ? s.investments.find((i) => i.id === view.id) : null;
+    const f = view.f;
     const institutions = [...new Set(s.investments.map((i) => i.institution).filter(Boolean))];
 
     const save = () => {
@@ -135,10 +224,10 @@ export function render(root) {
       ],
       h('button', { class: 'btn-primary btn-block', onClick: save }, existing ? 'Save changes' : 'Add'),
       existing ? h('div', { class: 'row' },
-        h('a', { class: 'btn grow', style: 'text-align:center;text-decoration:none', href: `#/add/buy-${existing.id}` }, '＋ Buy more'),
-        h('a', { class: 'btn grow', style: 'text-align:center;text-decoration:none', href: `#/add/sell-${existing.id}` }, '💵 Cash out')) : null,
+        h('button', { class: 'grow', onClick: () => open('buy', existing.id) }, '＋ Buy more'),
+        existing.amount > 0 ? h('button', { class: 'grow', onClick: () => open('sell', existing.id) }, '💵 Cash out') : null) : null,
       existing ? h('button', { class: 'btn-danger btn-block', onClick: remove }, 'Delete') : null,
-      h('button', { class: 'btn-block', onClick: () => { view.editing = null; draw(); } }, 'Cancel'));
+      h('button', { class: 'btn-block', onClick: close }, 'Cancel'));
   }
 
   draw();

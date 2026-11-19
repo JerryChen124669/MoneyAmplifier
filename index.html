@@ -29,10 +29,7 @@
   <nav class="tabbar" aria-label="Main">
     <!-- a Shiba seen from behind (after the sketch): two paws at the sides, two big cheeks, fluffy belly fur, tail tuft + bum-hole in the middle -->
     <svg class="butt" viewBox="0 0 360 104" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="lobeFill" x1="0" y1="0" x2="0" y2="1"><stop class="lobe-a" offset="0.35"/><stop class="lobe-b" offset="1"/></linearGradient>
-        <linearGradient id="cleftFill" x1="0" y1="0" x2="1" y2="0"><stop class="cl-a" offset="0"/><stop class="cl-b" offset="0.5"/><stop class="cl-a" offset="1"/></linearGradient>
-      </defs>
+      
       <!-- hind paws: sole pad + toe beans -->
       <ellipse class="paw" cx="42" cy="70" rx="42" ry="29"/>
       <ellipse class="pad" cx="50" cy="71" rx="28" ry="17"/>
@@ -42,13 +39,9 @@
       <circle class="bean" cx="343" cy="59" r="4.5"/><circle class="bean" cx="351" cy="74" r="4.5"/><circle class="bean" cx="339" cy="86" r="4.5"/>
       <!-- tan "saddle" on the back: its top sweeps down into the tail valley -->
       <path class="rump" d="M66 64 C64 32 88 6 122 5 C142 5 160 9 170 19 C175 23 185 23 190 19 C200 9 218 5 238 5 C272 6 296 32 294 64 C293 86 276 101 246 101 H114 C84 101 67 86 66 64 Z"/>
-      <!-- pale underside, seen in the notch between the cheeks -->
-      <rect class="belly" x="156" y="78" width="48" height="22"/>
-      <!-- white cheeks: one shape, no inner outline -->
-      <path class="lobe" d="M72 64 C70 40 88 22 116 21 C140 21 160 29 171 43 C175 48 178 51 180 54 C182 51 185 48 189 43 C200 29 220 21 244 21 C272 22 290 40 288 64 C286 86 270 99 242 99 H198 C190 99 183 93 180 84 C177 93 170 99 162 99 H118 C90 99 74 86 72 64 Z"/>
+      <!-- white cheeks and belly: one flat shape (the middle is the same colour as the cheeks) -->
+      <path class="lobe" d="M72 64 C70 40 88 22 116 21 C140 21 160 29 171 43 C175 48 178 51 180 54 C182 51 185 48 189 43 C200 29 220 21 244 21 C272 22 290 40 288 64 C286 86 270 99 242 99 H118 C90 99 74 86 72 64 Z"/>
       <path class="gloss" d="M88 44 C93 34 103 29 114 29 M272 44 C267 34 257 29 246 29"/>
-      <!-- the cleft and underside are shaded, not drawn with a line -->
-      <path class="cleft" d="M180 54 C166 66 164 88 170 100 H190 C196 88 194 66 180 54 Z"/>
     </svg>
     <a href="#/invest" data-tab="invest">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span>Invest</span>
@@ -59,16 +52,10 @@
     <a href="#/add" data-tab="add" class="tab-add" aria-label="Add">
       <!-- tail tuft sticking up, behind the bum-hole -->
       <svg class="tail" viewBox="0 0 46 36" aria-hidden="true">
-        <defs>
-          <clipPath id="tailClip"><path d="M4 36 C3 29 7 24 11 21 C8 13 14 5 24 5 C34 5 41 12 38 20 C41 24 43 30 42 36 Z"/></clipPath>
-          <linearGradient id="tailShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0.4" stop-color="#b98765" stop-opacity="0"/><stop offset="1" stop-color="#b98765" stop-opacity="0.4"/></linearGradient>
-          <linearGradient id="tailFill" x1="0" y1="0" x2="0" y2="1"><stop class="tw" offset="0.5"/><stop class="tt" offset="0.88"/></linearGradient>
-        </defs>
+        <defs><clipPath id="tailClip"><path d="M4 36 C3 29 7 24 11 21 C8 13 14 5 24 5 C34 5 41 12 38 20 C41 24 43 30 42 36 Z"/></clipPath></defs>
         <g clip-path="url(#tailClip)">
-          <rect class="tfill" width="46" height="36" fill="url(#tailFill)"/>
-          <path class="tstripe" d="M0 36 C1 25 7 17 15 15 C14 22 14 30 16 36 Z"/>
-          <rect width="46" height="36" fill="url(#tailShade)"/>
-          
+          <rect class="tfill" width="46" height="36"/>
+          <path class="tstripe" d="M0 36 V16 C6 15 12 19 16 24 C22 27 30 26 46 26 V36 Z"/>
         </g>
         <path class="tuft" d="M4.6 31 C5 27 8 23.5 11 21 C8 13 14 5 24 5 C34 5 41 12 38 20 C40.5 23 41.5 27 41.4 31"/>
         <path class="tgloss" d="M17 14 C19 10 22 8.5 26 8.5"/>

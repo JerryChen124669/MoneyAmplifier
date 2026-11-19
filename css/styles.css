@@ -83,17 +83,11 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 }
 .tabbar .butt { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 5px 8px rgba(var(--brand-rgb), .25)); }
 .butt .paw { fill: var(--dog-cream); stroke: var(--dog-line); stroke-width: 2.2; }
-.butt .pad { fill: var(--dog-pad); stroke: var(--dog-line); stroke-width: 1.6; }
+.butt .pad { fill: var(--dog-bean); stroke: var(--dog-line); stroke-width: 1.6; }
 .butt .bean { fill: var(--dog-bean); stroke: var(--dog-line); stroke-width: 1.6; }
 .butt .rump { fill: var(--dog); stroke: var(--dog-line); stroke-width: 2.4; stroke-linejoin: round; }
-.butt .lobe { fill: url(#lobeFill); stroke: none; }
-.butt .lobe-a { stop-color: var(--dog-cream); }
-.butt .lobe-b { stop-color: var(--dog-shade); }
+.butt .lobe { fill: var(--dog-cream); stroke: none; }
 .butt .gloss { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; opacity: .7; }
-.butt .belly { fill: var(--dog-crease); stroke: none; }
-.butt .cleft { fill: url(#cleftFill); stroke: none; }
-.butt .cl-a { stop-color: var(--dog-shadow); stop-opacity: 0; }
-.butt .cl-b { stop-color: var(--dog-shadow); stop-opacity: .5; }
 .tabbar a {
   position: absolute; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
   left: calc((var(--cx) - var(--w) / 2) * var(--u)); top: calc(var(--ty) * var(--v)); width: calc(var(--w) * var(--u)); height: calc(var(--th) * var(--v));
@@ -115,11 +109,9 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .hole .plus { fill: none; stroke: #5a2f22; stroke-width: 3; stroke-linecap: round; }
 .tabbar .tail { position: absolute; left: 50%; top: calc(-40 * var(--v)); width: calc(60 * var(--u)); height: calc(47 * var(--v)); margin-left: calc(-30 * var(--u)); overflow: visible; transform-origin: 50% 90%; }
 .tail .tuft { fill: none; stroke: var(--dog-line); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
-.tail .tfill { stroke: none; }
-.tail .tw { stop-color: var(--dog-cream); }
+.tail .tfill { fill: var(--dog-cream); stroke: none; }
 .tail .tstripe { fill: var(--dog); stroke: none; }
 .tail rect { stroke: none; }
-.tail .tt { stop-color: var(--dog); }
 .tail .tgloss { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; opacity: .8; }/* tapping any tab: the tail wags, the bum bounces and the hole squeezes */
 .tabbar.wag { animation: butt-bounce .55s cubic-bezier(.3, .7, .4, 1); }
 .tabbar.wag .tail { animation: tail-wag .7s ease-in-out; }
@@ -224,7 +216,13 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .tx-btn { width: 100%; background: transparent; border: 0; border-bottom: 1.5px dashed var(--line); border-radius: 0; padding: 12px 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .tx-btn:active { transform: none; opacity: .7; }
 .tx-btn:last-child { border-bottom: 0; }
-.tx-btn.sold-out { opacity: .55; }
+.holding { border-bottom: 1.5px dashed var(--line); }
+.holding:last-child { border-bottom: 0; }
+.holding .tx-btn { border-bottom: 0; padding-bottom: 6px; }
+.holding .actions { display: flex; gap: 8px; padding: 0 0 12px; }
+.holding.sold-out .tx-btn { opacity: .55; }
+button.mini { padding: 5px 12px; font-size: .8rem; }
+button:disabled { opacity: .45; cursor: default; }
 
 /* money moving between cash and an investment: one wide, tinted line */
 .tx.transfer { background: var(--brand-soft); border-radius: 14px; border-bottom: 0; margin: 6px -10px; padding: 11px 12px; }
