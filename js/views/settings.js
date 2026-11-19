@@ -1,5 +1,5 @@
 // Settings: currency, billing-period start day, categories, backup / restore.
-import { h, download, today } from '../util.js';
+import { h, download, today, uid } from '../util.js';
 import { getState, update, replaceAll, exportJSON, exportCSV, exportInvestmentsCSV, defaults, INVEST_CATEGORY, INVEST_OUT_CATEGORY } from '../store.js';
 import { toast } from '../components.js';
 
@@ -28,6 +28,46 @@ export function render(root) {
             h('button', { class: 'btn-danger', 'aria-label': `Delete ${c}`, onClick: () => removeCat(type, c) }, '×')])),
       h('div', { class: 'row', style: 'margin-top:10px' }, input, h('button', { onClick: add }, 'Add')));
   };
+
+  // ---- accounts: cash, bank accounts, each credit card… ----
+  const accountsCard = () => {
+    const nameIn = h('input', { type: 'text', maxlength: '40', placeholder: 'New account, e.g. 💳 Visa', style: 'margin:0' });
+    const openIn = h('input', { type: 'number', inputmode: 'decimal', step: 'any', placeholder: 'Starting balance (optional)', style: 'margin:0' });
+    const add = () => {
+      const name = nameIn.value.trim();
+      if (!name) return;
+      if (s.accounts.some((a) => a.name === name)) return toast('Already exists');
+      const opening = parseFloat(openIn.value || '0');
+      update((st) => { st.accounts.push({ id: uid(), name, opening: Number.isFinite(opening) ? opening : 0 }); });
+    };
+    nameIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
+    return h('div', { class: 'card stack' }, h('h2', {}, 'Accounts'),
+      h('p', { class: 'muted', style: 'margin:0' }, 'Pick one when you record an expense or income: cash, a bank account, each credit card. A credit card goes negative as you spend, and that counts against your net worth. Starting balances are on the Profile tab.'),
+      s.accounts.map((a) => h('div', { class: 'row', style: 'padding:6px 0;border-bottom:1px solid var(--line)' },
+        h('div', { class: 'grow' }, a.name),
+        h('button', { 'aria-label': `Rename ${a.name}`, onClick: () => renameAccount(a) }, 'Rename'),
+        h('button', { class: 'btn-danger', 'aria-label': `Delete ${a.name}`, onClick: () => removeAccount(a) }, '×'))),
+      h('div', { class: 'stack' }, nameIn, h('div', { class: 'row' }, openIn, h('button', { onClick: add }, 'Add'))));
+  };
+  function renameAccount(a) {
+    const name = (prompt('New name:', a.name) || '').trim();
+    if (!name || name === a.name) return;
+    if (s.accounts.some((x) => x.name === name)) return toast('Already exists');
+    update((st) => { st.accounts.find((x) => x.id === a.id).name = name; });
+  }
+  function removeAccount(a) {
+    if (s.accounts.length <= 1) return toast('Keep at least one account');
+    const target = s.accounts.find((x) => x.id !== a.id);
+    const count = s.transactions.filter((t) => t.account === a.id).length;
+    if (!confirm(count ? `Delete "${a.name}"? Its ${count} entr${count === 1 ? 'y' : 'ies'} and starting balance move to "${target.name}".` : `Delete "${a.name}"?`)) return;
+    update((st) => {
+      const to = st.accounts.find((x) => x.id === target.id);
+      to.opening += st.accounts.find((x) => x.id === a.id).opening;
+      st.transactions.forEach((t) => { if (t.account === a.id) t.account = target.id; });
+      st.accounts = st.accounts.filter((x) => x.id !== a.id);
+      if (st.settings.lastAccount === a.id) st.settings.lastAccount = '';
+    });
+  }
 
   function rename(type, oldName) {
     const name = (prompt('New name:', oldName) || '').trim();
@@ -77,6 +117,7 @@ export function render(root) {
             update((st) => { st.settings.twelveKey = v; }, { silent: true }); toast('Saved! ✨');
           },
         }))),
+    accountsCard(),
     categoryCard('expense', 'Expense categories'),
     categoryCard('income', 'Income categories'),
     h('div', { class: 'card stack' }, h('h2', {}, 'Your data'),

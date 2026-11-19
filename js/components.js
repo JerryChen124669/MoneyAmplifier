@@ -1,8 +1,26 @@
 // Shared UI pieces used by several views.
-import { h, money, sum, periodKeyFor, periodLabel, shiftKey, today } from './util.js';import { getState, isTransfer } from './store.js';
+import { h, money, sum, periodKeyFor, periodLabel, shiftKey, today } from './util.js';
+import { getState, isTransfer, accountName } from './store.js';
 
-/** Which month/period the Home and History tabs are showing (kept while you switch tabs). */
-export const ui = { period: null };
+/**
+ * What Home, History and Profile are showing (kept while you switch tabs):
+ * period = which month, account = 'all' or one account id, flow = 'expense' | 'income' (Home charts).
+ */
+export const ui = { period: null, account: 'all', flow: 'expense' };
+/** The account being viewed; falls back to 'all' if that account no longer exists. */
+export function activeAccount() {
+  if (ui.account !== 'all' && !getState().accounts.some((a) => a.id === ui.account)) ui.account = 'all';
+  return ui.account;
+}
+export const inAccount = (t) => activeAccount() === 'all' || t.account === ui.account;
+
+/** Chips: All accounts + one per account. Picking one changes what the charts and lists show. */
+export function accountPicker(onChange, { label = 'Account' } = {}) {
+  const sel = activeAccount();
+  const chip = (id, text) => h('button', { class: `chip ${sel === id ? 'on' : ''}`, 'aria-pressed': sel === id ? 'true' : 'false', onClick: () => { ui.account = id; onChange(); } }, text);
+  return h('div', { class: 'acct-picker', role: 'group', 'aria-label': label },
+    chip('all', '✨ All accounts'), getState().accounts.map((a) => chip(a.id, a.name)));
+}
 export function currentPeriod() {
   return periodKeyFor(today(), getState().settings.startDay);
 }
@@ -79,7 +97,7 @@ export function flowRow(t, { meta = '' } = {}) {
   const hold = t.investId && getState().investments.find((i) => i.id === t.investId);
   const buy = t.type === 'expense';
   const invAmount = t.holdValue ?? t.amount;
-  const cash = { label: '💰 Cash', amount: buy ? -t.amount : t.amount };
+  const cash = { label: accountName(getState(), t.account), amount: buy ? -t.amount : t.amount };
   const inv = { label: `📈 ${hold ? hold.name : 'Investment'}`, amount: buy ? invAmount : -invAmount };
   const side = (x, cls) => h('div', { class: `flow-side ${cls}` },
     h('div', { class: 'flow-name' }, x.label),
@@ -95,11 +113,11 @@ export function txRow(t) {
   const { currency } = getState().settings;
   const sign = t.type === 'income' ? '+' : '−';
   if (isTransfer(t)) return flowRow(t);
-  const note = txNote(t);
+  const sub = [accountName(getState(), t.account), txNote(t)].filter(Boolean).join(' · ');
   return h('a', { class: 'tx', href: `#/add/${t.id}` },
     h('div', { class: 'grow' },
       h('div', { class: 'name' }, t.category || 'Uncategorised'),
-      note ? h('div', { class: 'muted' }, note) : null),
+      h('div', { class: 'muted' }, sub)),
     h('div', { class: `amt ${t.type}` }, sign + money(t.amount, currency)));
 }
 

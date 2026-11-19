@@ -20,14 +20,17 @@ export function render(root) {
   let chart = null;
   const rerender = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
   const held = () => s.investments.filter((i) => i.amount > 0);
+  const lastAcct = () => (s.accounts.some((a) => a.id === s.settings.lastAccount) ? s.settings.lastAccount : s.accounts[0].id);
+  const acctSelect = (f, text) => h('label', { class: 'field' }, text,
+    h('select', { value: f.account, onChange: (e) => { f.account = e.target.value; } }, s.accounts.map((a) => h('option', { value: a.id }, a.name))));
 
   function open(mode, id = null) {
     view.mode = mode;
     view.id = id;
     if (mode === 'buy' || mode === 'sell') {
-      view.f = { id: id || (mode === 'sell' ? (held()[0] || {}).id : (s.investments[0] || {}).id), amount: '', removed: '', shares: '', date: today(), note: '' };
+      view.f = { id: id || (mode === 'sell' ? (held()[0] || {}).id : (s.investments[0] || {}).id), amount: '', removed: '', shares: '', date: today(), note: '', account: lastAcct() };
     } else if (mode === 'new') {
-      view.f = { name: '', type: 'Stock', institution: '', ticker: '', shares: '', amount: '', date: today(), record: true };
+      view.f = { name: '', type: 'Stock', institution: '', ticker: '', shares: '', amount: '', date: today(), record: true, account: lastAcct() };
     } else if (mode === 'edit') {
       const i = s.investments.find((x) => x.id === id);
       view.f = { ...i, amount: String(i.amount), shares: i.shares ? String(i.shares) : '' };
@@ -127,19 +130,19 @@ export function render(root) {
       const amount = numOf(f.amount);
       if (!hold) return toast('Pick a holding');
       if (!(amount > 0)) return toast(sell ? 'Enter the cash you received' : 'Enter the amount you paid');
-      const base = { id: uid(), amount, date: f.date || today(), note: f.note.trim() };
+      const base = { id: uid(), amount, date: f.date || today(), note: f.note.trim(), account: f.account };
       if (sell) {
         const removed = Math.min(f.removed.trim() ? numOf(f.removed) : amount, hold.amount);
         if (!(removed > 0)) return toast('Nothing left in that holding to take off');
         let shares = numOf(f.shares);
         if (!(shares > 0)) shares = hold.shares > 0 && hold.amount > 0 ? hold.shares * Math.min(1, removed / hold.amount) : 0;
         const rec = { ...base, type: 'income', category: INVEST_OUT_CATEGORY };
-        update((st) => commitTx(st, rec, null, { pick: { id: hold.id }, holdValue: removed, shares }), { silent: true });
+        update((st) => { commitTx(st, rec, null, { pick: { id: hold.id }, holdValue: removed, shares }); st.settings.lastAccount = f.account; }, { silent: true });
         toast('Cashed out! Added to Income ✨');
       } else {
         const shares = numOf(f.shares);
         const rec = { ...base, type: 'expense', category: INVEST_CATEGORY };
-        update((st) => commitTx(st, rec, null, { pick: { id: hold.id }, holdValue: amount, shares: shares > 0 ? shares : 0 }), { silent: true });
+        update((st) => { commitTx(st, rec, null, { pick: { id: hold.id }, holdValue: amount, shares: shares > 0 ? shares : 0 }); st.settings.lastAccount = f.account; }, { silent: true });
         toast('Saved! Added to Expenses ✨');
       }
       rerender();
@@ -152,6 +155,7 @@ export function render(root) {
         : 'The amount you pay comes out of your daily account as an Expense and goes into the holding, so your net worth stays the same.'),
       h('label', { class: 'field' }, 'Holding',
         h('select', { value: f.id, onChange: (e) => { f.id = e.target.value; draw(); } }, choices.map((i) => h('option', { value: i.id }, label(i))))),
+      acctSelect(f, sell ? 'Cash goes into account' : 'Paid from account'),
       h('label', { class: 'field' }, sell ? 'Cash received' : 'Amount paid',
         h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.amount, onInput: (e) => { f.amount = e.target.value; } })),
       sell ? h('label', { class: 'field' }, 'Value taken off the holding (blank = same as the cash received)',
@@ -184,8 +188,8 @@ export function render(root) {
         update((st) => { Object.assign(st.investments.find((i) => i.id === existing.id), base, { amount, updated: today() }); }, { silent: true });
       } else if (f.record && amount > 0) {
         // a purchase: records an Expense and the holding together
-        const rec = { id: uid(), type: 'expense', amount, category: INVEST_CATEGORY, date: f.date || today(), note: '' };
-        update((st) => commitTx(st, rec, null, { pick: base, holdValue: amount, shares: base.shares }), { silent: true });
+        const rec = { id: uid(), type: 'expense', amount, category: INVEST_CATEGORY, date: f.date || today(), note: '', account: f.account };
+        update((st) => { commitTx(st, rec, null, { pick: base, holdValue: amount, shares: base.shares }); st.settings.lastAccount = f.account; }, { silent: true });
       } else {
         update((st) => { st.investments.push({ id: uid(), ...base, amount, updated: today(), priceCur: '', price: 0, priceDate: '' }); }, { silent: true });
       }
@@ -215,6 +219,7 @@ export function render(root) {
           h('label', { class: 'field' }, 'Ticker', h('input', { type: 'text', maxlength: '30', autocapitalize: 'off', value: f.ticker, onInput: (e) => { f.ticker = e.target.value; } })),
           h('label', { class: 'field' }, 'Shares / units held', h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.shares, onInput: (e) => { f.shares = e.target.value; } })))),
       existing ? null : [
+        acctSelect(f, 'Paid from account (used when recorded as an expense)'),
         h('label', { class: 'field' }, 'Date bought', h('input', { type: 'date', value: f.date, onChange: (e) => { f.date = e.target.value; } })),
         h('label', { class: 'check' },
           h('input', { type: 'checkbox', checked: f.record, onChange: (e) => { f.record = e.target.checked; } }),

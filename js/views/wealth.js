@@ -1,8 +1,8 @@
-// Net worth ("net profile"): daily account + investments − debts, with a monthly trend.
+// Profile (net worth): all accounts + investments − debts, with the balance of each account and charts over time.
 // The current month's snapshot is saved automatically whenever you open this page.
 import { h, money, ymd, uid } from '../util.js';
-import { getState, update, netWorthNow } from '../store.js';
-import { toast, empty, cssVar, donut } from '../components.js';
+import { getState, update, netWorthNow, accountBalance } from '../store.js';
+import { toast, empty, cssVar, donut, accountPicker, activeAccount } from '../components.js';
 
 export const title = 'Profile';
 
@@ -37,14 +37,26 @@ export function render(root) {
     prev ? h('div', { class: `muted ${now.net >= net(prev) ? 'income' : 'expense'}` },
       `${now.net >= net(prev) ? '▲' : '▼'} ${money(Math.abs(now.net - net(prev)), currency)} vs ${prev.month}`) : null,
     h('div', { class: 'stats', style: 'margin-top:12px' },
-      h('div', {}, h('span', { class: 'muted' }, '💵 Daily account'), h('b', {}, money(now.cash, currency))),
+      h('div', {}, h('span', { class: 'muted' }, '💵 Accounts'), h('b', {}, money(now.cash, currency))),
       h('div', {}, h('span', { class: 'muted' }, '📈 Investments'), h('b', {}, money(now.invest, currency))),
       h('div', {}, h('span', { class: 'muted' }, '💳 Debts'), h('b', { class: 'expense' }, money(now.debts, currency))))));
+
+  // every account's balance (a credit card shows negative: that is what you owe on it)
+  root.append(h('div', { class: 'card' }, h('h2', {}, '🏦 Accounts'),
+    s.accounts.map((a) => {
+      const bal = accountBalance(s, a.id);
+      return h('div', { class: 'tx' },
+        h('div', { class: 'grow' }, h('div', { class: 'name' }, a.name)),
+        h('div', { class: `amt ${bal < 0 ? 'expense' : ''}` }, money(bal, currency)));
+    })));
 
   // where the money is
   const byType = {};
   s.investments.forEach((i) => { byType[i.type] = (byType[i.type] || 0) + i.amount; });
-  const parts = [...(now.cash > 0 ? [['Daily account', now.cash]] : []), ...Object.entries(byType).filter((e) => e[1] > 0)];
+  const parts = [
+    ...s.accounts.map((a) => [a.name, accountBalance(s, a.id)]).filter((e) => e[1] > 0),
+    ...Object.entries(byType).filter((e) => e[1] > 0),
+  ];
   if (parts.length) {
     const d = donut(parts, currency);
     charts.push(d);
@@ -56,14 +68,18 @@ export function render(root) {
     root.classList.add('wide');
     const compact = new Intl.NumberFormat(undefined, { notation: 'compact' });
 
-    // cash at the end of each calendar month, worked out from the transactions
-    const txs = [...s.transactions].sort((a, b) => a.date.localeCompare(b.date));
+    // balance at the end of each calendar month for the chosen account (or all accounts), worked out from the transactions
+    const acct = activeAccount();
+    const acctRec = s.accounts.find((a) => a.id === acct);
+    const openingTotal = acct === 'all' ? s.accounts.reduce((a, x) => a + x.opening, 0) : acctRec.opening;
+    const nowBalance = acct === 'all' ? now.cash : accountBalance(s, acct);
+    const txs = s.transactions.filter((t) => acct === 'all' || t.account === acct).sort((a, b) => a.date.localeCompare(b.date));
     const firstMonth = [txs[0] && txs[0].date.slice(0, 7), rows[0] && rows[0].month, month].filter(Boolean).sort()[0];
     const cashPts = [];
     for (let m = firstMonth; m <= month; m = nextMonth(m)) {
-      if (m === month) { cashPts.push([m, now.cash]); break; }
+      if (m === month) { cashPts.push([m, nowBalance]); break; }
       const cutoff = nextMonth(m) + '-01';
-      cashPts.push([m, s.profile.openingCash + txs.filter((t) => t.date < cutoff).reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0)]);
+      cashPts.push([m, openingTotal + txs.filter((t) => t.date < cutoff).reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0)]);
     }
     // investments: monthly snapshots, then the daily log (last value of each month wins), then today
     const inv = new Map(rows.map((r) => [r.month, r.invest]));
@@ -85,7 +101,7 @@ export function render(root) {
       return chart;
     };
     const panes = [
-      { key: 'cash', label: '💵 Cash', title: 'Daily account over time', pts: cashPts, color: '#a8693a', soft: 'rgba(168,105,58,.16)', now: now.cash },
+      { key: 'cash', label: '💵 Accounts', title: `${acct === 'all' ? 'All accounts' : acctRec.name} over time`, pts: cashPts, color: '#a8693a', soft: 'rgba(168,105,58,.16)', now: nowBalance },
       { key: 'invest', label: '📈 Investments', title: 'Investments over time', pts: investPts, color: '#6f9a6b', soft: 'rgba(111,154,107,.2)', now: now.invest },
     ].map((p) => {
       p.canvas = h('canvas');
@@ -98,24 +114,25 @@ export function render(root) {
       panes.forEach((p) => { p.el.classList.toggle('on', p.key === key); p.btn.classList.toggle('on', p.key === key); if (p.chart && p.key === key) p.chart.resize(); });
     };
     panes.forEach((p) => { p.btn = h('button', { onClick: () => show(p.key) }, p.label); });
-    root.append(h('div', { class: 'pair-toggle segmented' }, panes.map((p) => p.btn)), h('div', { class: 'pair' }, panes.map((p) => p.el)));
+    root.append(accountPicker(() => window.dispatchEvent(new HashChangeEvent('hashchange'))),
+      h('div', { class: 'pair-toggle segmented' }, panes.map((p) => p.btn)), h('div', { class: 'pair' }, panes.map((p) => p.el)));
     show('cash'); // show the first pane before building the charts so they measure a visible box
     panes.forEach((p) => { if (p.pts.length) p.chart = make(p.canvas, p.title, p.pts, p.color, p.soft); });
   }
 
   // inputs that feed the net worth
-  const opening = h('input', { type: 'number', inputmode: 'decimal', step: 'any', value: s.profile.openingCash });
+  const openings = s.accounts.map((a) => ({ id: a.id, el: h('input', { type: 'number', inputmode: 'decimal', step: 'any', value: a.opening }) }));
   const debts = h('input', { type: 'number', inputmode: 'decimal', min: '0', step: 'any', value: s.profile.debts });
   root.append(h('div', { class: 'card stack' }, h('h2', {}, '⚙️ What counts'),
-    h('p', { class: 'muted', style: 'margin:0' }, 'Daily account = starting balance + all income − all expenses you record. Investments come from the Invest tab.'),
-    h('label', { class: 'field' }, 'Starting balance of your daily account (cash + bank before your first entry)', opening),
-    h('label', { class: 'field' }, 'Total debts (loans, credit card balance…)', debts),
+    h('p', { class: 'muted', style: 'margin:0' }, 'An account\'s balance = its starting balance + its income − its expenses. Investments come from the Invest tab. Add or rename accounts in Settings.'),
+    s.accounts.map((a, i) => h('label', { class: 'field' }, `${a.name}: starting balance (before your first entry)`, openings[i].el)),
+    h('label', { class: 'field' }, 'Total debts (loans…; a credit card is already counted as an account)', debts),
     h('button', {
       class: 'btn-primary btn-block',
       onClick: () => {
-        const o = parseFloat(opening.value || '0'), d = parseFloat(debts.value || '0');
-        if (!Number.isFinite(o) || !(d >= 0)) return toast('Check the numbers');
-        update((st) => { st.profile.openingCash = o; st.profile.debts = d; });
+        const vals = openings.map((o) => parseFloat(o.el.value || '0')), d = parseFloat(debts.value || '0');
+        if (vals.some((v) => !Number.isFinite(v)) || !(d >= 0)) return toast('Check the numbers');
+        update((st) => { openings.forEach((o, i) => { st.accounts.find((a) => a.id === o.id).opening = vals[i]; }); st.profile.debts = d; });
         toast('Saved! ✨');
       },
     }, 'Save')));

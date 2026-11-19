@@ -19,7 +19,8 @@ export function render(root, id) {
 
   const form = existing
     ? { ...existing, amount: String(existing.amount) }
-    : { type: 'expense', amount: '', category: '', date: today(), note: '' };
+    : { type: 'expense', amount: '', category: '', date: today(), note: '', account: s.accounts.some((a) => a.id === s.settings.lastAccount) ? s.settings.lastAccount : s.accounts[0].id };
+  if (!s.accounts.some((a) => a.id === form.account)) form.account = s.accounts[0].id;
   Object.assign(form, { holding: 'new', hName: '', hType: 'Stock', hInst: '', hTicker: '', shares: '', removed: '' });
   if (existing && existing.investId) {
     if (s.investments.some((i) => i.id === existing.investId)) form.holding = existing.investId;
@@ -91,6 +92,13 @@ export function render(root, id) {
           onClick: () => { if (form.type !== t) { form.type = t; form.category = ''; draw(); } },
         }, t === 'expense' ? 'Expense' : 'Income'))),
       h('div', { class: 'card' }, amountEl),
+      // which account the money moves in: pick this first, then the category
+      h('div', { class: 'card' }, h('h2', {}, form.type === 'expense' ? '💳 Paid with' : '🏦 Goes into'),
+        h('div', { class: 'chips' }, s.accounts.map((a) => h('button', {
+          class: `chip ${form.account === a.id ? 'on' : ''}`,
+          'aria-pressed': form.account === a.id ? 'true' : 'false',
+          onClick: () => { form.account = a.id; draw(); },
+        }, a.name)))),
       h('div', { class: 'card' }, h('h2', {}, '🦴 Category'),
         h('div', { class: 'chips' }, cats.map((c) => h('button', {
           class: `chip ${form.category === c ? 'on' : ''}`,
@@ -110,7 +118,7 @@ export function render(root, id) {
     if (!(amount > 0)) return toast('Enter an amount greater than 0');
     if (!form.category) return toast('Pick a category');
     if (!form.date) return toast('Pick a date');
-    const record = { id: existing ? existing.id : uid(), type: form.type, amount, category: form.category, date: form.date, note: form.note.trim() };
+    const record = { id: existing ? existing.id : uid(), type: form.type, amount, category: form.category, date: form.date, note: form.note.trim(), account: form.account };
     let link = null;
     if (isBuy()) {
       if (form.holding === 'new' && !form.hName.trim()) return toast('Name what you bought, e.g. TSMC');
@@ -131,7 +139,7 @@ export function render(root, id) {
       if (!(shares > 0)) shares = heldShares > 0 && room > 0 ? heldShares * Math.min(1, removed / room) : 0;
       link = { pick: { id: hold.id }, holdValue: removed, shares };
     }
-    update((st) => commitTx(st, record, existing, link), { silent: true });
+    update((st) => { commitTx(st, record, existing, link); st.settings.lastAccount = record.account; }, { silent: true });
     toast(link ? (isBuy() ? 'Saved! Added to Invest ✨' : 'Saved! Taken off Invest ✨') : 'Saved! ✨');
     if (existing) location.hash = '#/history';
     else if (preset) location.hash = '#/invest';

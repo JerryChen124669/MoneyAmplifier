@@ -2,8 +2,8 @@
 // Filter by type (expense / income) and category, search, and group by day or by category.
 // Picking Expenses or Income shows a doughnut chart of what the money was made of.
 import { h, money, sum, periodRange, dayLabel } from '../util.js';
-import { getState, isTransfer } from '../store.js';
-import { monthNav, txRow, txNote, flowRow, empty, activePeriod, donut } from '../components.js';
+import { getState, isTransfer, accountName } from '../store.js';
+import { monthNav, txRow, txNote, flowRow, empty, activePeriod, donut, accountPicker, inAccount } from '../components.js';
 
 export const title = 'History';
 
@@ -11,7 +11,7 @@ export function render(root) {
   const s = getState();
   const { currency, startDay } = s.settings;
   const { start, end } = periodRange(activePeriod(), startDay);
-  const inPeriod = s.transactions.filter((t) => t.date >= start && t.date < end);
+  const inPeriod = s.transactions.filter((t) => t.date >= start && t.date < end && inAccount(t));
   const filter = { q: '', type: 'all', cat: 'all', group: 'date' };
 
   const chartBox = h('div');
@@ -83,7 +83,7 @@ export function render(root) {
             items.map((t) => isTransfer(t)
               ? flowRow(t, { meta: dayLabel(t.date) })
               : h('a', { class: 'tx', href: `#/add/${t.id}` },
-                h('div', { class: 'grow' }, h('div', { class: 'name' }, dayLabel(t.date)), txNote(t) ? h('div', { class: 'muted' }, txNote(t)) : null),
+                h('div', { class: 'grow' }, h('div', { class: 'name' }, dayLabel(t.date)), h('div', { class: 'muted' }, [accountName(s, t.account), txNote(t)].filter(Boolean).join(' · '))),
                 h('div', { class: `amt ${t.type}` }, (t.type === 'income' ? '+' : '−') + money(t.amount, currency))))))));
       return;
     }
@@ -107,8 +107,10 @@ export function render(root) {
     return b;
   });
 
+  const rerender = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
   root.append(
-    monthNav(() => window.dispatchEvent(new HashChangeEvent('hashchange'))),
+    monthNav(rerender),
+    accountPicker(rerender),
     h('div', { class: 'stack', style: 'margin-bottom:10px' },
       h('input', { type: 'search', placeholder: 'Search…', 'aria-label': 'Search', style: 'margin:0', onInput: (e) => { filter.q = e.target.value; paint(); } }),
       h('div', { class: 'row' },

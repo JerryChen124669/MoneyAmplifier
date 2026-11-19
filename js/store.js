@@ -20,22 +20,31 @@ export const isTransfer = (t) =>
 /** Auto-priced holding: has a ticker and a number of shares/units, so its value = shares × latest price. */
 export const isAuto = (i) => !!i.ticker && i.shares > 0;
 
+const defaultAccounts = () => [
+  { id: 'cash', name: '💵 Cash', opening: 0 },
+  { id: 'bank', name: '🏦 Bank', opening: 0 },
+  { id: 'card', name: '💳 Credit card', opening: 0 },
+];
+
 export const defaults = () => ({
-  version: 2,
-  settings: { currency: 'TWD', startDay: 1, autoPrices: true, twelveKey: '', lastPriceRefresh: '' },
+  version: 3,
+  settings: { currency: 'TWD', startDay: 1, autoPrices: true, twelveKey: '', lastPriceRefresh: '', lastAccount: '' },
   categories: {
     expense: ['🍜 Food', '🛒 Groceries', '🚌 Transport', '🏠 Housing', '💡 Utilities', '🎬 Fun',
       '👕 Shopping', '💊 Health', '📚 Learning', '🎁 Gifts', '✈️ Travel', INVEST_CATEGORY, '📦 Other'],
     income: ['💼 Salary', '🎯 Bonus', INTEREST, INVEST_OUT_CATEGORY, '💰 Other income'],
   },
-  // daily account: { id, date, type: 'expense'|'income', amount, category, note, investId?, holdValue?, shares? }
+  // Accounts = where money sits / is paid from: cash, a bank account, each credit card… A credit card's balance goes
+  // negative as you spend, which counts against your net worth.
+  accounts: defaultAccounts(), // { id, name, opening }
+  // { id, date, type: 'expense'|'income', amount, category, account (id), note, investId?, holdValue?, shares? }
   // investId = the holding on the Invest page this purchase / cash-out belongs to (Investment / cash-out categories only);
   // holdValue = how much the holding's value went up (purchase) or down (cash-out); shares = units bought / sold.
   transactions: [],
   // { id, name, type, institution, amount (current value), updated, ticker, shares, priceCur, price, priceDate }
   investments: [],
   valueLog: [],      // total investment value per day: { date, invest } (feeds the Net worth chart)
-  profile: { openingCash: 0, debts: 0 }, // daily-account starting balance + total debts, used for net worth
+  profile: { debts: 0 }, // total debts (loans…), used for net worth
   netWorth: [],      // monthly snapshots: { id, month: 'YYYY-MM', cash, invest, debts }
 });
 
@@ -48,7 +57,7 @@ const str = (v, max = 80) => String(v ?? '').slice(0, max);
 export function sanitize(raw) {
   if (!raw || typeof raw !== 'object') throw new Error('Not a MoneyAmplifier backup.');
   const d = defaults();
-  const out = { ...d, settings: { ...d.settings }, categories: { ...d.categories }, profile: { ...d.profile }, transactions: [], investments: [], valueLog: [], netWorth: [] };
+  const out = { ...d, settings: { ...d.settings }, categories: { ...d.categories }, profile: { ...d.profile }, accounts: [], transactions: [], investments: [], valueLog: [], netWorth: [] };
 
   const s = raw.settings || {};
   if (typeof s.currency === 'string' && /^[A-Z]{3}$/.test(s.currency)) out.settings.currency = s.currency;
@@ -57,6 +66,25 @@ export function sanitize(raw) {
   if (typeof s.autoPrices === 'boolean') out.settings.autoPrices = s.autoPrices;
   if (typeof s.twelveKey === 'string' && /^[\w-]{0,80}$/.test(s.twelveKey)) out.settings.twelveKey = s.twelveKey;
   if (isDate(s.lastPriceRefresh)) out.settings.lastPriceRefresh = s.lastPriceRefresh;
+
+  // accounts (older backups had a single "daily account": its starting balance becomes the first account's)
+  const p = raw.profile || {};
+  if (Array.isArray(raw.accounts)) {
+    const seen = new Set();
+    for (const a of raw.accounts) {
+      const name = str(a && a.name, 40).trim();
+      const id = str(a && a.id, 40) || uid();
+      if (!name || seen.has(id)) continue;
+      seen.add(id);
+      out.accounts.push({ id, name, opening: Number.isFinite(num(a.opening)) ? num(a.opening) : 0 });
+    }
+  }
+  if (!out.accounts.length) {
+    out.accounts = defaultAccounts();
+    if (Number.isFinite(num(p.openingCash))) out.accounts[0].opening = num(p.openingCash);
+  }
+  const accountIds = new Set(out.accounts.map((a) => a.id));
+  if (accountIds.has(s.lastAccount)) out.settings.lastAccount = s.lastAccount;
 
   for (const t of ['expense', 'income']) {
     const list = raw.categories && Array.isArray(raw.categories[t]) ? raw.categories[t] : null;
@@ -71,7 +99,10 @@ export function sanitize(raw) {
     if (!t || !isDate(t.date) || !(t.type === 'expense' || t.type === 'income') || !(amount > 0)) continue;
     let category = str(t.category, 40);
     if (t.type === 'income' && category === OLD_INTEREST) category = INTEREST;
-    const rec = { id: str(t.id, 40) || uid(), date: t.date, type: t.type, amount, category, note: str(t.note, 200) };
+    const rec = {
+      id: str(t.id, 40) || uid(), date: t.date, type: t.type, amount, category, note: str(t.note, 200),
+      account: accountIds.has(t.account) ? t.account : out.accounts[0].id, // entries from before accounts existed go to the first one
+    };
     if (isTransfer(rec) && t.investId) {
       rec.investId = str(t.investId, 40);
       if (num(t.holdValue) >= 0) rec.holdValue = num(t.holdValue);
@@ -99,8 +130,6 @@ export function sanitize(raw) {
     if (v && isDate(v.date) && num(v.invest) >= 0) out.valueLog.push({ date: v.date, invest: num(v.invest) });
   }
   out.valueLog.sort((a, b) => a.date.localeCompare(b.date));
-  const p = raw.profile || {};
-  if (Number.isFinite(num(p.openingCash))) out.profile.openingCash = num(p.openingCash);
   if (num(p.debts) >= 0) out.profile.debts = num(p.debts);
 
   for (const r of Array.isArray(raw.netWorth) ? raw.netWorth : []) {
@@ -173,9 +202,15 @@ export function replaceAll(newState) {
 }
 
 // ---- derived numbers shared by Home / Net worth ----
-/** Daily account balance = starting balance + all income − all expenses. */
+export const accountName = (s, id) => (s.accounts.find((a) => a.id === id) || { name: 'Unknown account' }).name;
+/** One account's balance = its starting balance + its income − its expenses. A credit card ends up negative. */
+export function accountBalance(s, id) {
+  const a = s.accounts.find((x) => x.id === id);
+  return (a ? a.opening : 0) + s.transactions.reduce((sum, t) => (t.account === id ? sum + (t.type === 'income' ? t.amount : -t.amount) : sum), 0);
+}
+/** All accounts together (cash + banks + credit cards). */
 export function cashBalance(s = state) {
-  return s.profile.openingCash + s.transactions.reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0);
+  return s.accounts.reduce((sum, a) => sum + a.opening, 0) + s.transactions.reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
 }
 export const investTotal = (s = state) => s.investments.reduce((a, i) => a + i.amount, 0);
 export function netWorthNow(s = state) {
@@ -264,9 +299,9 @@ function csv(rows) {
   return '﻿' + rows.map((r) => r.map(safe).join(',')).join('\r\n');
 }
 export function exportCSV() {
-  const rows = [['date', 'type', 'category', 'amount', 'note']];
+  const rows = [['date', 'account', 'type', 'category', 'amount', 'note']];
   [...state.transactions].sort((a, b) => a.date.localeCompare(b.date))
-    .forEach((t) => rows.push([t.date, t.type, t.category, t.amount, t.note]));
+    .forEach((t) => rows.push([t.date, accountName(state, t.account), t.type, t.category, t.amount, t.note]));
   return csv(rows);
 }
 export function exportInvestmentsCSV() {
