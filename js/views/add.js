@@ -3,8 +3,8 @@
 // Expenses in the "Investment" category and income in the "Investment cash-out" category move money between
 // the daily account and a holding on the Invest page, so both pages always stay in step.
 import { h, uid, today, money } from '../util.js';
-import { getState, update, INVEST_CATEGORY, INVEST_OUT_CATEGORY, INVEST_TYPES, TYPE_EMOJI, TYPE_LABEL, commitTx, removeTx, ensureAccount } from '../store.js';
-import { toast, accountField, methodField } from '../components.js';
+import { getState, update, INVEST_CATEGORY, INVEST_OUT_CATEGORY, INVEST_TYPES, TYPE_EMOJI, TYPE_LABEL, KINDS, defaultKind, commitTx, removeTx, ensureAccount, cardSummary, accountName } from '../store.js';
+import { toast, accountField, methodField, cardField } from '../components.js';
 
 export const title = '記一筆';
 
@@ -13,23 +13,37 @@ const numOf = (v) => parseFloat(String(v ?? '').replace(/,/g, ''));
 export function render(root, id) {
   const s = getState();
   const { currency } = s.settings;
-  const preset = /^(buy|sell)-/.test(id || '') ? id.split('-')[0] : null;
+  const preset = /^(buy|sell|pay|card)-/.test(id || '') ? id.split('-')[0] : null;
   const presetHolding = preset ? id.slice(preset.length + 1) : null;
   const existing = id && !preset ? s.transactions.find((t) => t.id === id) : null;
 
   // the account is typed (or picked from the ones you used before); a new name creates the account when you save
   const acctNameOf = (id) => (s.accounts.find((a) => a.id === id) || s.accounts[0]).name;
   const lastAcct = s.accounts.some((a) => a.id === s.settings.lastAccount) ? s.settings.lastAccount : s.accounts[0].id;
+  const lastCard = s.cards.some((c) => c.id === s.settings.lastCard) ? s.settings.lastCard : (s.cards[0] || {}).id || '';
   const form = existing
-    ? { ...existing, amount: String(existing.amount), accountName: acctNameOf(existing.account), method: existing.method || '' }
-    : { type: 'expense', amount: '', category: '', date: today(), note: '', accountName: acctNameOf(lastAcct), method: s.settings.lastMethod || '' };
+    ? { ...existing, amount: String(existing.amount), accountName: acctNameOf(existing.account), method: existing.method || '',
+      kind: existing.kind || defaultKind(s, existing.category), card: existing.card || '', kindTouched: true,
+      to: existing.toCard ? `c:${existing.toCard}` : existing.toAccount ? `a:${existing.toAccount}` : '', toName: '' }
+    : { type: 'expense', amount: '', category: '', date: today(), note: '', accountName: acctNameOf(lastAcct), method: s.settings.lastMethod || '',
+      kind: 'variable', kindTouched: false, card: lastCard, to: '', toName: '' };
   Object.assign(form, { holding: 'new', hName: '', hType: 'Stock', hInst: '', hTicker: '', shares: '', removed: '' });
+  const presetCard = preset === 'pay' || preset === 'card' ? s.cards.find((c) => c.id === presetHolding) : null;
+  if (presetCard) {
+    form.card = presetCard.id;
+    if (preset === 'card') Object.assign(form, { type: 'expense', method: 'card' });
+    else {
+      const sum = cardSummary(s, presetCard);
+      const owe = sum.billed > 0 ? sum.billed : Math.max(0, sum.payable);
+      Object.assign(form, { type: 'transfer', to: `c:${presetCard.id}`, accountName: acctNameOf(presetCard.account), amount: owe > 0 ? String(Math.round(owe * 100) / 100) : '' });
+    }
+  }
   if (existing && existing.investId) {
     if (s.investments.some((i) => i.id === existing.investId)) form.holding = existing.investId;
     if (existing.shares) form.shares = String(existing.shares);
     if (existing.type === 'income' && existing.holdValue != null) form.removed = String(existing.holdValue);
   }
-  if (preset && s.investments.some((i) => i.id === presetHolding)) {
+  if ((preset === 'buy' || preset === 'sell') && s.investments.some((i) => i.id === presetHolding)) {
     form.type = preset === 'buy' ? 'expense' : 'income';
     form.category = preset === 'buy' ? INVEST_CATEGORY : INVEST_OUT_CATEGORY;
     form.holding = presetHolding;
@@ -80,29 +94,78 @@ export function render(root, id) {
         h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: form.shares, onInput: (e) => { form.shares = e.target.value; } })) : null);
   }
 
+  // money moving between two of your accounts, or paying a credit-card bill
+  function transferCard() {
+    const fromId = (s.accounts.find((a) => a.name.toLowerCase() === form.accountName.trim().toLowerCase()) || {}).id;
+    const opts = [
+      ...s.accounts.filter((a) => a.id !== fromId).map((a) => [`a:${a.id}`, `帳戶：${a.name}`]),
+      ...s.cards.map((c) => [`c:${c.id}`, `信用卡繳款：${c.name}（應付 ${money(cardSummary(s, c).payable, currency)}）`]),
+      ['new', '＋ 新增另一個帳戶'],
+    ];
+    if (!opts.some((o) => o[0] === form.to)) form.to = opts[0][0];
+    return h('div', { class: 'card stack' }, h('h2', {}, '轉帳'),
+      accountField(form, { label: '從哪個帳戶轉出？', onChange: draw }),
+      h('label', { class: 'field' }, '轉到哪裡？',
+        h('select', { value: form.to, onChange: (e) => { form.to = e.target.value; draw(); } }, opts.map(([v, l]) => h('option', { value: v }, l)))),
+      form.to === 'new' ? h('label', { class: 'field' }, '新帳戶名稱',
+        h('input', { type: 'text', maxlength: '40', placeholder: '例如：郵局', value: form.toName, onInput: (e) => { form.toName = e.target.value; } })) : null,
+      h('p', { class: 'muted', style: 'margin:0' }, form.to.startsWith('c:')
+        ? '繳信用卡帳單：錢從帳戶扣除，同時沖銷應付帳款，不會再算一次支出。'
+        : '轉出帳戶減少、轉入帳戶增加相同金額，不算收入也不算支出。'));
+  }
+
   function draw() {
-    const cats = [...s.categories[form.type]];
+    const cats = [...(s.categories[form.type] || [])];
     if (form.category && !cats.includes(form.category)) cats.push(form.category); // keep a since-deleted category visible
     const amountEl = h('input', {
       class: 'amount-input', type: 'text', inputmode: 'decimal', placeholder: '0', value: form.amount, 'aria-label': isSell() ? '收到的金額' : '金額',
       onInput: (e) => { form.amount = e.target.value; },
     });
+    const seg = h('div', { class: 'segmented', style: 'grid-template-columns:repeat(3,1fr)' },
+      [['expense', '支出'], ['income', '收入'], ['transfer', '轉帳']].map(([t, label]) => h('button', {
+        class: form.type === t ? 'on' : '',
+        onClick: () => {
+          if (form.type === t) return;
+          form.type = t; form.category = '';
+          if (t !== 'expense' && form.method === 'card') form.method = '';
+          if (t === 'transfer') form.method = '';
+          draw();
+        },
+      }, label)));
+    if (form.type === 'transfer') {
+      root.replaceChildren(h('div', { class: 'stack' }, seg, h('div', { class: 'card' }, amountEl), transferCard(),
+        h('div', { class: 'card stack' },
+          h('label', { class: 'field' }, '日期', h('input', { type: 'date', value: form.date, onChange: (e) => { form.date = e.target.value; } })),
+          h('label', { class: 'field' }, '備註（選填）', h('input', { type: 'text', maxlength: '200', value: form.note, onInput: (e) => { form.note = e.target.value; } }))),
+        h('button', { class: 'btn-primary btn-block', onClick: save }, existing ? '儲存變更' : '儲存'),
+        existing ? h('button', { class: 'btn-danger btn-block', onClick: remove }, '刪除') : null));
+      if (!existing && !form.amount) amountEl.focus();
+      return;
+    }
+    // expenses: how it was paid first (a credit card means "owed until you pay the bill", so no account is needed), then the account
+    const expense = form.type === 'expense';
+    const useCard = expense && form.method === 'card' && s.cards.length && form.card;
+    const payCard = useCard && s.cards.find((c) => c.id === form.card);
     root.replaceChildren(h('div', { class: 'stack' },
-      h('div', { class: 'segmented' },
-        ['expense', 'income'].map((t) => h('button', {
-          class: form.type === t ? 'on' : '',
-          onClick: () => { if (form.type !== t) { form.type = t; form.category = ''; if (t === 'income' && form.method === 'card') form.method = ''; draw(); } },
-        }, t === 'expense' ? '支出' : '收入'))),
+      seg,
       h('div', { class: 'card' }, amountEl),
-      // which bank account, then how it was paid (cash / transfer / credit card), then the category
-      h('div', { class: 'card stack' }, h('h2', {}, '帳戶'),
-        accountField(form, { label: form.type === 'expense' ? '從哪個帳戶支付？' : '存入哪個帳戶？' }),
-        methodField(form, { income: form.type === 'income', label: form.type === 'expense' ? '怎麼付款？' : '怎麼收到？' })),
+      h('div', { class: 'card stack' }, h('h2', {}, expense ? '付款' : '帳戶'),
+        expense ? methodField(form, { label: '怎麼付款？', onChange: draw }) : null,
+        expense && form.method === 'card' ? cardField(form, { onChange: draw }) : null,
+        payCard
+          ? h('div', { class: 'muted' }, `帳單由「${accountName(s, payCard.account)}」繳款，繳款前不會動到帳戶餘額。`)
+          : accountField(form, { label: expense ? '從哪個帳戶支付？' : '存入哪個帳戶？' }),
+        expense ? null : methodField(form, { income: true, label: '怎麼收到？' })),
       h('div', { class: 'card' }, h('h2', {}, '類別'),
         h('div', { class: 'chips' }, cats.map((c) => h('button', {
           class: `chip ${form.category === c ? 'on' : ''}`,
-          onClick: () => { form.category = c; draw(); },
+          onClick: () => { form.category = c; if (!form.kindTouched) form.kind = defaultKind(s, c); draw(); },
         }, c)))),
+      expense && !isBuy() ? h('div', { class: 'card' }, h('h2', {}, '支出性質'),
+        h('div', { class: 'chips' }, KINDS.map((k) => h('button', {
+          class: `chip ${form.kind === k.id ? 'on' : ''}`, onClick: () => { form.kind = k.id; form.kindTouched = true; draw(); },
+        }, k.label))),
+        h('div', { class: 'muted', style: 'margin-top:6px' }, '固定：每月差不多都要付（房租、水電、保險、訂閱）。浮動：隨生活變動（餐飲、娛樂、購物）。')) : null,
       isBuy() ? buyCard() : isSell() ? sellCard() : null,
       h('div', { class: 'card stack' },
         h('label', { class: 'field' }, '日期', h('input', { type: 'date', value: form.date, onChange: (e) => { form.date = e.target.value; } })),
@@ -115,10 +178,14 @@ export function render(root, id) {
   function save() {
     const amount = numOf(form.amount);
     if (!(amount > 0)) return toast('請輸入大於 0 的金額');
-    if (!form.category) return toast('請選擇類別');
     if (!form.date) return toast('請選擇日期');
-    if (!form.accountName.trim()) return toast('請輸入或選擇帳戶');
+    if (form.type === 'transfer') return saveTransfer(amount);
+    if (!form.category) return toast('請選擇類別');
+    const cardRec = form.type === 'expense' && form.method === 'card' ? s.cards.find((c) => c.id === form.card) : null;
+    if (!cardRec && !form.accountName.trim()) return toast('請輸入或選擇帳戶');
     const record = { id: existing ? existing.id : uid(), type: form.type, amount, category: form.category, date: form.date, note: form.note.trim(), method: form.method };
+    if (cardRec) record.card = cardRec.id;
+    if (form.type === 'expense' && !isBuy()) record.kind = form.kind;
     let link = null;
     if (isBuy()) {
       if (form.holding === 'new' && !form.hName.trim()) return toast('請輸入買了什麼，例如台積電');
@@ -140,18 +207,44 @@ export function render(root, id) {
       link = { pick: { id: hold.id }, holdValue: removed, shares };
     }
     update((st) => {
-      record.account = ensureAccount(st, form.accountName); // a name you have not used before becomes a new account
+      // a card purchase belongs to the account that pays that card's bill; otherwise a new name becomes a new account
+      record.account = cardRec ? cardRec.account : ensureAccount(st, form.accountName);
       commitTx(st, record, existing, link);
-      st.settings.lastAccount = record.account;
+      if (!cardRec) st.settings.lastAccount = record.account;
+      else st.settings.lastCard = cardRec.id;
       st.settings.lastMethod = form.method;
+      if (record.kind) st.settings.catKind[record.category] = record.kind;
     }, { silent: true });
     toast(link ? (isBuy() ? '已儲存！已加到投資' : '已儲存！已從投資扣除') : '已儲存！');
     if (existing) location.hash = '#/history';
+    else if (preset === 'card') location.hash = `#/cards/${presetHolding}`;
     else if (preset) location.hash = '#/invest';
     else {
       Object.assign(form, { amount: '', note: '', holding: 'new', hName: '', hType: 'Stock', hInst: '', hTicker: '', shares: '', removed: '' });
       draw();
     }
+  }
+
+  function saveTransfer(amount) {
+    const fromName = form.accountName.trim();
+    if (!fromName) return toast('請輸入或選擇轉出帳戶');
+    const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+    if (form.to === 'new' && !form.toName.trim()) return toast('請輸入新帳戶名稱');
+    if (form.to === 'new' && sameName(form.toName, fromName)) return toast('轉出和轉入不能是同一個帳戶');
+    const fromRec = s.accounts.find((a) => sameName(a.name, fromName));
+    if (fromRec && form.to === `a:${fromRec.id}`) return toast('轉出和轉入不能是同一個帳戶');
+    const rec = { id: existing ? existing.id : uid(), type: 'transfer', amount, category: '', date: form.date, note: form.note.trim(), method: '' };
+    update((st) => {
+      rec.account = ensureAccount(st, fromName);
+      if (form.to.startsWith('c:')) rec.toCard = form.to.slice(2);
+      else rec.toAccount = form.to === 'new' ? ensureAccount(st, form.toName) : form.to.slice(2);
+      commitTx(st, rec, existing, null);
+      st.settings.lastAccount = rec.account;
+    }, { silent: true });
+    toast(rec.toCard ? '已儲存！已沖銷信用卡應付帳款' : '已儲存！');
+    if (existing) location.hash = '#/history';
+    else if (preset === 'pay') location.hash = `#/cards/${presetHolding}`;
+    else { Object.assign(form, { amount: '', note: '' }); draw(); }
   }
 
   function remove() {

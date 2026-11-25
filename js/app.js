@@ -8,8 +8,11 @@ import * as add from './views/add.js';
 import * as invest from './views/invest.js';
 import * as wealth from './views/wealth.js';
 import * as settings from './views/settings.js';
+import * as cards from './views/cards.js';
+import * as wishlist from './views/wishlist.js';
+import { applyTheme, toggleTheme } from './theme.js';
 
-const routes = { home, history, add, invest, wealth, settings };
+const routes = { home, history, add, invest, wealth, settings, cards, wishlist };
 const root = document.getElementById('view');
 let cleanup = null;
 
@@ -32,6 +35,9 @@ function render() {
   }
 }
 
+applyTheme();
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+window.addEventListener('theme-changed', render); // charts take their colours when drawn
 window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
 subscribe(render); // any saved change re-draws the current page
 render();

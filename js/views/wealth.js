@@ -1,7 +1,7 @@
 // Profile (net worth): all accounts + investments − debts, with the balance of each account and charts over time.
 // The current month's snapshot is saved automatically whenever you open this page.
 import { h, money, ymd, uid } from '../util.js';
-import { getState, update, netWorthNow, accountBalance } from '../store.js';
+import { getState, update, netWorthNow, accountBalance, txEffect } from '../store.js';
 import { toast, empty, cssVar, donut, accountPicker, activeAccount } from '../components.js';
 
 export const title = '資產';
@@ -39,7 +39,8 @@ export function render(root) {
     h('div', { class: 'stats', style: 'margin-top:12px' },
       h('div', {}, h('span', { class: 'muted' }, '帳戶'), h('b', {}, money(now.cash, currency))),
       h('div', {}, h('span', { class: 'muted' }, '投資'), h('b', {}, money(now.invest, currency))),
-      h('div', {}, h('span', { class: 'muted' }, '負債'), h('b', { class: 'expense' }, money(now.debts, currency))))));
+      h('div', {}, h('span', { class: 'muted' }, '負債'), h('b', { class: 'expense' }, money(now.debts, currency)))),
+    now.cardDebt ? h('div', { class: 'muted', style: 'margin-top:10px' }, `負債中包含信用卡應付帳款 ${money(now.cardDebt, currency)}　`, h('a', { href: '#/cards' }, '查看信用卡 →')) : null));
 
   // every account's balance
   root.append(h('div', { class: 'card' }, h('h2', {}, '各帳戶餘額'),
@@ -73,13 +74,13 @@ export function render(root) {
     const acctRec = s.accounts.find((a) => a.id === acct);
     const openingTotal = acct === 'all' ? s.accounts.reduce((a, x) => a + x.opening, 0) : acctRec.opening;
     const nowBalance = acct === 'all' ? now.cash : accountBalance(s, acct);
-    const txs = s.transactions.filter((t) => acct === 'all' || t.account === acct).sort((a, b) => a.date.localeCompare(b.date));
+    const txs = s.transactions.filter((t) => acct === 'all' || t.account === acct || t.toAccount === acct).sort((a, b) => a.date.localeCompare(b.date));
     const firstMonth = [txs[0] && txs[0].date.slice(0, 7), rows[0] && rows[0].month, month].filter(Boolean).sort()[0];
     const cashPts = [];
     for (let m = firstMonth; m <= month; m = nextMonth(m)) {
       if (m === month) { cashPts.push([m, nowBalance]); break; }
       const cutoff = nextMonth(m) + '-01';
-      cashPts.push([m, openingTotal + txs.filter((t) => t.date < cutoff).reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0)]);
+      cashPts.push([m, openingTotal + txs.filter((t) => t.date < cutoff).reduce((a, t) => a + txEffect(t, acct), 0)]);
     }
     // investments: monthly snapshots, then the daily log (last value of each month wins), then today
     const inv = new Map(rows.map((r) => [r.month, r.invest]));
@@ -126,7 +127,7 @@ export function render(root) {
   root.append(h('div', { class: 'card stack' }, h('h2', {}, '計算設定'),
     h('p', { class: 'muted', style: 'margin:0' }, '帳戶餘額 = 起始餘額 + 收入 − 支出。投資來自「投資」頁。帳戶可在設定中新增或改名。'),
     s.accounts.map((a, i) => h('label', { class: 'field' }, `${a.name}：起始餘額（第一筆紀錄之前）`, openings[i].el)),
-    h('label', { class: 'field' }, '總負債（貸款、信用卡未還金額…）', debts),
+    h('label', { class: 'field' }, '其他負債（貸款…；信用卡請在「信用卡」頁管理，會自動計入負債）', debts),
     h('button', {
       class: 'btn-primary btn-block',
       onClick: () => {

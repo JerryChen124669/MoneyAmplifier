@@ -12,7 +12,7 @@ export function activeAccount() {
   if (ui.account !== 'all' && !getState().accounts.some((a) => a.id === ui.account)) ui.account = 'all';
   return ui.account;
 }
-export const inAccount = (t) => activeAccount() === 'all' || t.account === ui.account;
+export const inAccount = (t) => activeAccount() === 'all' || t.account === ui.account || t.toAccount === ui.account;
 
 /** Chips: All accounts + one per account. Picking one changes what the charts and lists show. */
 export function accountPicker(onChange, { label = '帳戶' } = {}) {
@@ -87,17 +87,18 @@ function openMonthPicker(onChange) {
  * Which bank account: a text box that suggests accounts you typed before (like the institution box on the Invest page),
  * plus one-tap chips for them. Typing a new name creates the account when the entry is saved. Uses f.accountName.
  */
-export function accountField(f, { label = '帳戶' } = {}) {
+export function accountField(f, { label = '帳戶', onChange = null } = {}) {
   const s = getState();
   const listId = 'account-suggestions';
   const same = (name) => f.accountName.trim().toLowerCase() === name.toLowerCase();
   const chips = s.accounts.map((a) => h('button', {
-    type: 'button', class: 'chip', onClick: () => { f.accountName = a.name; input.value = a.name; sync(); },
+    type: 'button', class: 'chip', onClick: () => { f.accountName = a.name; input.value = a.name; sync(); if (onChange) onChange(); },
   }, a.name));
   const sync = () => chips.forEach((c, i) => c.classList.toggle('on', same(s.accounts[i].name)));
   const input = h('input', {
     type: 'text', maxlength: '40', list: listId, autocomplete: 'off', placeholder: '輸入帳戶，例如：富邦銀行',
     value: f.accountName, onInput: (e) => { f.accountName = e.target.value; sync(); },
+    onChange: () => { if (onChange) onChange(); },
   });
   sync();
   return h('div', { class: 'stack' },
@@ -106,14 +107,31 @@ export function accountField(f, { label = '帳戶' } = {}) {
 }
 
 /** How it was paid: Cash / Transfer / Credit card (income: Cash / Transfer). Uses f.method; tap the chosen one again to clear it. */
-export function methodField(f, { income = false, label = '付款方式' } = {}) {
+export function methodField(f, { income = false, label = '付款方式', onChange = null } = {}) {
   const list = income ? METHODS.filter((m) => m.id !== 'card') : METHODS;
   const chips = list.map((m) => h('button', {
-    type: 'button', class: 'chip', onClick: () => { f.method = f.method === m.id ? '' : m.id; sync(); },
+    type: 'button', class: 'chip', onClick: () => { f.method = f.method === m.id ? '' : m.id; sync(); if (onChange) onChange(); },
   }, m.label));
   const sync = () => chips.forEach((c, i) => { c.classList.toggle('on', f.method === list[i].id); c.setAttribute('aria-pressed', f.method === list[i].id ? 'true' : 'false'); });
   sync();
   return h('div', {}, h('div', { class: 'muted', style: 'font-weight:700;margin:2px 0 6px' }, label), h('div', { class: 'chips' }, chips));
+}
+
+/** Which credit card a purchase goes on (chips). Uses f.card. */
+export function cardField(f, { label = '哪一張信用卡？', onChange = null } = {}) {
+  const cards = getState().cards;
+  if (!cards.length) {
+    return h('div', { class: 'muted' }, '還沒有信用卡。', h('a', { href: '#/cards' }, '新增信用卡'), '後，消費會先列入應付帳款，繳款時才從帳戶扣款。目前這筆會直接從帳戶扣款。');
+  }
+  const chips = cards.map((c) => h('button', {
+    type: 'button', class: 'chip', onClick: () => { f.card = f.card === c.id ? '' : c.id; sync(); if (onChange) onChange(); },
+  }, c.name));
+  const sync = () => chips.forEach((c, i) => { c.classList.toggle('on', f.card === cards[i].id); c.setAttribute('aria-pressed', f.card === cards[i].id ? 'true' : 'false'); });
+  sync();
+  return h('div', {}, h('div', { class: 'muted', style: 'font-weight:700;margin:2px 0 6px' }, label), h('div', { class: 'chips' }, chips),
+    h('div', { class: 'muted', style: 'margin-top:6px' }, f.card
+      ? '先列入信用卡應付帳款，繳款時才從帳戶扣款，支出只算這一次。再點一次可取消。'
+      : '沒有選卡：這筆會直接從帳戶扣款。'));
 }
 
 /** Second line of an ordinary transaction row: its note. */
@@ -142,11 +160,27 @@ export function flowRow(t, { meta = '' } = {}) {
     extra ? h('div', { class: 'flow-meta muted' }, extra) : null);
 }
 
+/** Money moved between two of your accounts, or paid to a credit card: shown as "from → to", not as spending or income. */
+export function moveRow(t, { meta = '' } = {}) {
+  const s = getState();
+  const { currency } = s.settings;
+  const card = t.toCard && s.cards.find((c) => c.id === t.toCard);
+  const to = card ? `${card.name}（繳款）` : accountName(s, t.toAccount);
+  const side = (label, cls, text) => h('div', { class: `flow-side ${cls}` }, h('div', { class: 'flow-name' }, label), h('div', { class: 'flow-amt' }, text));
+  const extra = [meta, t.note].filter(Boolean).join(' · ');
+  return h('a', { class: 'tx transfer flow', href: `#/add/${t.id}` },
+    side(accountName(s, t.account), 'from', '−' + money(t.amount, currency)), h('span', { class: 'flow-arrow', 'aria-hidden': 'true' }, '→'),
+    side(to, 'to', '+' + money(t.amount, currency)),
+    extra ? h('div', { class: 'flow-meta muted' }, extra) : null);
+}
+
 export function txRow(t) {
   const { currency } = getState().settings;
   const sign = t.type === 'income' ? '+' : '−';
+  if (t.type === 'transfer') return moveRow(t);
   if (isTransfer(t)) return flowRow(t);
-  const sub = [accountName(getState(), t.account), methodLabel(t.method), txNote(t)].filter(Boolean).join(' · ');
+  const cardRec = t.card && getState().cards.find((c) => c.id === t.card);
+  const sub = [cardRec ? cardRec.name : accountName(getState(), t.account), methodLabel(t.method), txNote(t)].filter(Boolean).join(' · ');
   return h('a', { class: 'tx', href: `#/add/${t.id}` },
     h('div', { class: 'grow' },
       h('div', { class: 'name' }, t.category || '未分類'),

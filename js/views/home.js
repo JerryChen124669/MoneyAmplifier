@@ -2,7 +2,7 @@
 // Pick an account (or All accounts) and Spending / Income to change what the charts and totals show.
 // "Spent" and "Income" leave out money moved to / from investments (that is saving, not spending).
 import { h, money, sum, periodRange, periodKeyFor, shiftKey } from '../util.js';
-import { getState, netWorthNow, isTransfer, accountName } from '../store.js';
+import { getState, netWorthNow, isTransfer, accountName, kindOf, cardSummary } from '../store.js';
 import { monthNav, txRow, empty, activePeriod, PALETTE, cssVar, ui, activeAccount, inAccount, accountPicker } from '../components.js';
 
 export const title = 'MoneyAmplifier';
@@ -51,6 +51,20 @@ export function render(root) {
       h('div', { class: 'muted' }, '淨資產 · 所有帳戶 + 投資 − 負債'),
       h('div', { class: `big ${nw.net >= 0 ? 'income' : 'expense'}` }, money(nw.net, currency))),
     h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')));
+
+  // shortcuts: credit cards (what is owed / next bill) and the wish list
+  const owed = s.cards.reduce((a, c) => a + cardSummary(s, c).payable, 0);
+  const dues = s.cards.map((c) => cardSummary(s, c).nextDue).filter(Boolean).sort((a, b) => a.due.localeCompare(b.due));
+  const wishLeft = s.wishes.filter((w) => !w.done);
+  root.append(h('div', { class: 'shortcuts' },
+    h('a', { class: 'card', href: '#/cards' },
+      h('div', { class: 'muted' }, '信用卡應付'),
+      h('b', { class: owed > 0 ? 'expense' : '' }, s.cards.length ? money(owed, currency) : '尚未設定'),
+      h('div', { class: 'muted' }, dues.length ? `${dues[0].due.slice(5).replace('-', '/')} 前繳款` : s.cards.length ? '沒有待繳帳單' : '點此新增')),
+    h('a', { class: 'card', href: '#/wishlist' },
+      h('div', { class: 'muted' }, '願望清單'),
+      h('b', {}, wishLeft.length ? `${wishLeft.length} 項` : '尚未設定'),
+      h('div', { class: 'muted' }, wishLeft.length ? `共 ${money(sum(wishLeft, (w) => w.price), currency)}` : '點此新增'))));
 
   // Spending / Income switch for the two charts below
   root.append(h('div', { class: 'segmented', style: 'margin-bottom:14px' },
@@ -126,6 +140,20 @@ export function render(root) {
     }));
   }
   root.append(chartCard);
+
+  // fixed vs variable spending in this period (investment purchases are not spending, so they are not counted)
+  if (flow === 'expense' && expense > 0) {
+    const fixed = sum(spent.filter((t) => kindOf(s, t) === 'fixed'), (t) => t.amount);
+    const variable = expense - fixed;
+    const pct = (v) => Math.round((v / expense) * 100);
+    root.append(h('div', { class: 'card' }, h('h2', {}, '固定 ／ 浮動支出'),
+      h('div', { class: 'split-bar', role: 'img', 'aria-label': `固定 ${pct(fixed)}%，浮動 ${pct(variable)}%` },
+        h('i', { class: 'fixed', style: `width:${(fixed / expense) * 100}%` }), h('i', { class: 'variable', style: `width:${(variable / expense) * 100}%` })),
+      h('div', { class: 'stats two', style: 'margin-top:12px' },
+        h('div', {}, h('span', { class: 'muted' }, `固定 · ${pct(fixed)}%`), h('b', {}, money(fixed, currency))),
+        h('div', {}, h('span', { class: 'muted' }, `浮動 · ${pct(variable)}%`), h('b', {}, money(variable, currency)))),
+      h('div', { class: 'muted', style: 'margin-top:8px' }, '固定支出是每月都要付的（房租、水電…），浮動支出是可以調整的。')));
+  }
 
   const recent = [...txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   root.append(h('div', { class: 'card' }, h('h2', {}, '最近紀錄'),

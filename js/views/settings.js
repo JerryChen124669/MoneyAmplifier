@@ -2,6 +2,7 @@
 import { h, download, today, uid } from '../util.js';
 import { getState, update, replaceAll, exportJSON, exportCSV, exportInvestmentsCSV, defaults, INVEST_CATEGORY, INVEST_OUT_CATEGORY } from '../store.js';
 import { toast } from '../components.js';
+import { getTheme, setTheme } from '../theme.js';
 
 export const title = '設定';
 const CURRENCIES = ['TWD', 'USD', 'EUR', 'JPY', 'GBP', 'CNY', 'HKD', 'SGD', 'KRW', 'AUD', 'CAD', 'THB', 'MYR'];
@@ -63,7 +64,10 @@ export function render(root) {
     update((st) => {
       const to = st.accounts.find((x) => x.id === target.id);
       to.opening += st.accounts.find((x) => x.id === a.id).opening;
-      st.transactions.forEach((t) => { if (t.account === a.id) t.account = target.id; });
+      st.transactions.forEach((t) => { if (t.account === a.id) t.account = target.id; if (t.toAccount === a.id) t.toAccount = target.id; });
+      st.cards.forEach((c) => { if (c.account === a.id) c.account = target.id; });
+      // a transfer that would now go from an account to itself no longer means anything
+      st.transactions = st.transactions.filter((t) => !(t.type === 'transfer' && t.toAccount && t.toAccount === t.account));
       st.accounts = st.accounts.filter((x) => x.id !== a.id);
       if (st.settings.lastAccount === a.id) st.settings.lastAccount = '';
     });
@@ -94,6 +98,11 @@ export function render(root) {
   const fileInput = h('input', { type: 'file', accept: 'application/json,.json', style: 'display:none', onChange: (e) => importFile(e.target.files[0]) });
 
   root.append(
+    h('div', { class: 'card stack' }, h('h2', {}, '外觀'),
+      h('div', { class: 'segmented', style: 'grid-template-columns:repeat(3,1fr)' },
+        [['auto', '自動'],['light', '淺色'], ['dark', '深色']].map(([k, label]) => h('button', {
+          class: getTheme() === k ? 'on' : '', onClick: () => setTheme(k),
+        }, label)))),
     h('div', { class: 'card stack' }, h('h2', {}, '一般'),
       h('label', { class: 'field' }, '貨幣',
         h('select', { value: s.settings.currency, onChange: (e) => update((st) => { st.settings.currency = e.target.value; }) },

@@ -2,8 +2,8 @@
 // Filter by type (expense / income) and category, search, and group by day or by category.
 // Picking Expenses or Income shows a doughnut chart of what the money was made of.
 import { h, money, sum, periodRange, dayLabel } from '../util.js';
-import { getState, isTransfer, accountName } from '../store.js';
-import { monthNav, txRow, txNote, flowRow, empty, activePeriod, donut, accountPicker, inAccount } from '../components.js';
+import { getState, isTransfer, accountName, catOf, signed } from '../store.js';
+import { monthNav, txRow, txNote, flowRow, moveRow, empty, activePeriod, donut, accountPicker, inAccount } from '../components.js';
 
 export const title = '紀錄';
 
@@ -23,8 +23,9 @@ export function render(root) {
   const categoryOptions = () => {
     const names = filter.type === 'expense' ? s.categories.expense
       : filter.type === 'income' ? s.categories.income
+      : filter.type === 'transfer' ? []
       : [...s.categories.expense, ...s.categories.income];
-    const used = inPeriod.filter((t) => filter.type === 'all' || t.type === filter.type).map((t) => t.category);
+    const used = inPeriod.filter((t) => t.type !== 'transfer' && (filter.type === 'all' || t.type === filter.type)).map((t) => t.category).filter(Boolean);
     return [...new Set([...names, ...used])];
   };
   function fillCategories() {
@@ -46,9 +47,9 @@ export function render(root) {
     if (chart) chart.destroy();
     chart = null;
     chartBox.replaceChildren();
-    if (filter.type !== 'all' && byType.length) {
+    if ((filter.type === 'expense' || filter.type === 'income') && byType.length) {
       const totals = {};
-      byType.forEach((t) => { totals[t.category || '未分類'] = (totals[t.category || '未分類'] || 0) + t.amount; });
+      byType.forEach((t) => { totals[catOf(t)] = (totals[catOf(t)] || 0) + t.amount; });
       const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
       chart = donut(entries, currency);
       chartBox.append(h('div', { class: 'card' },
@@ -70,17 +71,17 @@ export function render(root) {
 
     if (filter.group === 'category') {
       const groups = {};
-      rows.forEach((t) => (groups[t.category || '未分類'] ||= []).push(t));
+      rows.forEach((t) => (groups[catOf(t)] ||= []).push(t));
       const grand = sum(rows, (t) => t.amount) || 1;
       list.replaceChildren(...Object.entries(groups)
-        .map(([cat, items]) => [cat, items, sum(items, (t) => (t.type === 'income' ? t.amount : -t.amount)), sum(items, (t) => t.amount)])
+        .map(([cat, items]) => [cat, items, sum(items, signed), sum(items, (t) => t.amount)])
         .sort((a, b) => b[3] - a[3])
         .map(([cat, items, net, gross]) => h('div', {},
           h('div', { class: 'day-head' },
             h('span', {}, `${cat} · ${Math.round((gross / grand) * 100)}%`),
             h('span', {}, money(net, currency))),
           h('div', { class: 'card', style: 'padding:4px 16px;margin-bottom:0' },
-            items.map((t) => isTransfer(t)
+            items.map((t) => t.type === 'transfer' ? moveRow(t, { meta: dayLabel(t.date) }) : isTransfer(t)
               ? flowRow(t, { meta: dayLabel(t.date) })
               : h('a', { class: 'tx', href: `#/add/${t.id}` },
                 h('div', { class: 'grow' }, h('div', { class: 'name' }, dayLabel(t.date)), h('div', { class: 'muted' }, [accountName(s, t.account), txNote(t)].filter(Boolean).join(' · '))),
@@ -91,7 +92,7 @@ export function render(root) {
     const days = {};
     rows.forEach((t) => (days[t.date] ||= []).push(t));
     list.replaceChildren(...Object.entries(days).map(([date, items]) => {
-      const net = sum(items, (t) => (t.type === 'income' ? t.amount : -t.amount));
+      const net = sum(items, signed);
       return h('div', {},
         h('div', { class: 'day-head' }, h('span', {}, dayLabel(date)), h('span', {}, money(net, currency))),
         h('div', { class: 'card', style: 'padding:4px 16px;margin-bottom:0' }, items.map(txRow)));
@@ -117,7 +118,7 @@ export function render(root) {
         h('select', {
           'aria-label': '類型', style: 'margin:0',
           onChange: (e) => { filter.type = e.target.value; fillCategories(); paint(); },
-        }, h('option', { value: 'all' }, '所有類型'), h('option', { value: 'expense' }, '支出'), h('option', { value: 'income' }, '收入')),
+        }, h('option', { value: 'all' }, '所有類型'), h('option', { value: 'expense' }, '支出'), h('option', { value: 'income' }, '收入'), h('option', { value: 'transfer' }, '轉帳')),
         catSelect),
       h('div', { class: 'segmented' }, groupButtons)),
     chartBox, summary, list);

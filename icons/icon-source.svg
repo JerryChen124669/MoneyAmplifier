@@ -1,56 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- MoneyAmplifier app icon: Shiba Inu with a coin. Replace this file (or add icon-source.png, 1024x1024), then run: npm run icons -->
+  <!-- MoneyAmplifier app icon: a cute, minimal flower. Replace this file (or add icon-source.png, 1024x1024), then run: npm run icons -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f3eee6"/>
-      <stop offset="1" stop-color="#d9cdbd"/>
+      <stop offset="0" stop-color="#f4ede3"/>
+      <stop offset="1" stop-color="#e3d6c6"/>
     </linearGradient>
-    <path id="face" d="M100 50 C146 50 184 74 184 110 L193 120 L183 127 C178 152 142 174 100 174 C58 174 22 152 17 127 L7 120 L16 110 C16 74 54 50 100 50 Z"/>
-    <clipPath id="faceclip"><use href="#face"/></clipPath>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <path d="M82 118l7 18 18 7-18 7-7 18-7-18-18-7 18-7z" fill="#fff" opacity=".95"/>
-  <path d="M440 340l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#fff" opacity=".85"/>
-  <path d="M112 420l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff" opacity=".8"/>
-  <g transform="rotate(14 432 92)">
-    <circle cx="432" cy="92" r="42" fill="#d8c39a" stroke="#b09a6e" stroke-width="9"/>
-    <circle cx="432" cy="92" r="27" fill="none" stroke="#c2ad82" stroke-width="4.5"/>
-    <text x="432" y="108" font-family="Arial, sans-serif" font-size="42" font-weight="700" text-anchor="middle" fill="#8f7a4c">$</text>
-  </g>
-  <g transform="translate(46 52) scale(2.1)">
-  <g stroke="#6e5a4a" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
-    <!-- ears -->
-    <path d="M28 84 C20 54 28 30 42 22 C62 28 80 44 88 62 Z" fill="#d3b595"/>
-    <path d="M172 84 C180 54 172 30 158 22 C138 28 120 44 112 62 Z" fill="#d3b595"/>
-    <path d="M40 68 C37 52 40 40 45 33 C56 39 65 48 70 58 Z" fill="#eadbd0" stroke="none"/>
-    <path d="M160 68 C163 52 160 40 155 33 C144 39 135 48 130 58 Z" fill="#eadbd0" stroke="none"/>
-    <!-- head -->
-    <use href="#face" fill="#d3b595"/>
-    <!-- cream cheeks, muzzle and chin -->
-    <g clip-path="url(#faceclip)" stroke="none">
-      <path d="M0 118 C14 100 40 98 58 111 C74 121 90 118 100 106 C110 118 126 121 142 111 C160 98 186 100 200 118 L200 190 L0 190 Z" fill="#f7f1e8"/>
+  <g transform="translate(0 26)">
+    <!-- two small leaves -->
+    <path d="M256 330 C226 342 190 362 170 392 C206 396 244 380 256 330 Z" fill="#9fb4a0"/>
+    <path d="M256 330 C286 342 322 362 342 392 C306 396 268 380 256 330 Z" fill="#b2c4b1"/>
+    <!-- five round petals -->
+    <g fill="#dba9a2">
+      <circle cx="256" cy="154" r="66"/>
+      <circle cx="334" cy="211" r="66"/>
+      <circle cx="304" cy="302" r="66"/>
+      <circle cx="208" cy="302" r="66"/>
+      <circle cx="178" cy="211" r="66"/>
     </g>
-    <use href="#face" fill="none"/>
+    <!-- soft highlight on each petal -->
+    <g fill="#ebc7c0">
+      <circle cx="256" cy="136" r="34"/>
+      <circle cx="350" cy="204" r="34"/>
+      <circle cx="314" cy="316" r="34"/>
+      <circle cx="198" cy="316" r="34"/>
+      <circle cx="162" cy="204" r="34"/>
+    </g>
+    <!-- face -->
+    <circle cx="256" cy="236" r="58" fill="#f3e3b3"/>
+    <circle cx="256" cy="236" r="58" fill="none" stroke="#e6cd8c" stroke-width="6"/>
+    <circle cx="237" cy="230" r="6" fill="#6b5a50"/>
+    <circle cx="275" cy="230" r="6" fill="#6b5a50"/>
+    <circle cx="224" cy="246" r="8" fill="#e8a99f" opacity=".65"/>
+    <circle cx="288" cy="246" r="8" fill="#e8a99f" opacity=".65"/>
+    <path d="M245 246 Q256 258 267 246" fill="none" stroke="#6b5a50" stroke-width="4.5" stroke-linecap="round"/>
   </g>
-  <!-- eyebrow spots + forehead dot -->
-  <ellipse cx="66" cy="81" rx="7.5" ry="5.5" fill="#f7f1e8"/>
-  <ellipse cx="134" cy="81" rx="7.5" ry="5.5" fill="#f7f1e8"/>
-  <circle cx="100" cy="72" r="3.4" fill="#b59570"/>
-  <!-- eyes -->
-  <ellipse cx="66" cy="102" rx="8.5" ry="10" fill="#4a3d34"/>
-  <ellipse cx="134" cy="102" rx="8.5" ry="10" fill="#4a3d34"/>
-  <circle cx="69" cy="98" r="3.4" fill="#fff"/>
-  <circle cx="137" cy="98" r="3.4" fill="#fff"/>
-  <circle cx="63" cy="107" r="1.6" fill="#fff" opacity=".85"/>
-  <circle cx="131" cy="107" r="1.6" fill="#fff" opacity=".85"/>
-  <!-- blush -->
-  <circle cx="40" cy="131" r="9" fill="#d4a89c" opacity=".7"/>
-  <circle cx="160" cy="131" r="9" fill="#d4a89c" opacity=".7"/>
-  <!-- tongue, smile, nose -->
-  <path d="M92 142 C92 157 108 157 108 142 Z" fill="#cf8f82" stroke="#6e5a4a" stroke-width="2.6" stroke-linejoin="round"/>
-  <path d="M82 136 C90 147 110 147 118 136" fill="none" stroke="#4a3d34" stroke-width="3.4" stroke-linecap="round"/>
-  <path d="M100 130 v8" stroke="#4a3d34" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M89 118 h22 c0 8 -6 13 -11 13 c-5 0 -11 -5 -11 -13 z" fill="#4a3d34"/>
-  <ellipse cx="95" cy="121" rx="3.4" ry="1.6" fill="#fff" opacity=".35"/>
-</g>
 </svg>
