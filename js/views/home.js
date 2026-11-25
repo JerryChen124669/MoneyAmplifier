@@ -34,9 +34,7 @@ export function render(root) {
   root.append(
     monthNav(rerender),
     accountPicker(rerender),
-    h('div', { class: 'card hero' },
-      h('img', { src: 'icons/mascot.svg', alt: 'Shiba mascot' }),
-      h('div', { class: 'bubble grow' }, mood)),
+    h('div', { class: 'card mood' }, mood),
     h('div', { class: 'card' },
       h('div', { class: 'muted' }, `Left over (income − spending) · ${scope}`),
       h('div', { class: `big ${balance >= 0 ? 'income' : 'expense'}` }, money(balance, currency)),
@@ -88,7 +86,7 @@ export function render(root) {
     monthlyCard.append(h('div', { class: 'chart-box' }, canvas));
     const avgLabel = `${keys.length}-month average`;
     const datasets = [
-      { type: 'bar', label: flow === 'expense' ? 'Spent' : 'Earned', data: values, borderRadius: 8, backgroundColor: keys.map((k) => (k === active ? cssVar('--brand') : cssVar('--line'))), order: 2 },
+      { type: 'bar', label: flow === 'expense' ? 'Spent' : 'Earned', data: values, borderRadius: 8, backgroundColor: keys.map((k) => (k === active ? (flow === 'expense' ? '#c4745a' : '#5f9a82') : cssVar('--line'))), order: 2 },
     ];
     if (acct === 'all') {
       datasets.push({ type: 'line', label: avgLabel, data: values.map(() => avg), borderColor: cssVar('--text'), borderDash: [6, 5], borderWidth: 2, pointRadius: 0, fill: false, order: 1 });

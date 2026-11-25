@@ -101,8 +101,8 @@ export function render(root) {
       return chart;
     };
     const panes = [
-      { key: 'cash', label: 'Accounts', title: `${acct === 'all' ? 'All accounts' : acctRec.name} over time`, pts: cashPts, color: '#8d7b6c', soft: 'rgba(141,123,108,.16)', now: nowBalance },
-      { key: 'invest', label: 'Investments', title: 'Investments over time', pts: investPts, color: '#7f9a86', soft: 'rgba(127,154,134,.2)', now: now.invest },
+      { key: 'cash', label: 'Accounts', title: `${acct === 'all' ? 'All accounts' : acctRec.name} over time`, pts: cashPts, color: '#5f7fa6', soft: 'rgba(95,127,166,.18)', now: nowBalance },
+      { key: 'invest', label: 'Investments', title: 'Investments over time', pts: investPts, color: '#5f9a82', soft: 'rgba(95,154,130,.2)', now: now.invest },
     ].map((p) => {
       p.canvas = h('canvas');
       const body = p.pts.length ? h('div', { class: 'chart-box' }, p.canvas) : empty('Nothing to chart yet.');

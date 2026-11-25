@@ -146,6 +146,7 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .empty { text-align: center; color: var(--muted); padding: 24px 8px; }
 .empty::before { content: '🐾'; display: block; font-size: 1.5rem; margin-bottom: 4px; opacity: .6; }
 
+.mood { font-weight: 600; text-align: center; padding: 14px 18px; background: var(--brand-soft); border-color: transparent; }
 .hero { display: flex; align-items: center; gap: 12px; }
 .hero img { width: 84px; height: auto; flex: none; animation: bob 3.2s ease-in-out infinite; }
 .bubble { position: relative; background: var(--brand-soft); border-radius: 14px; padding: 12px 14px; font-weight: 600; }
