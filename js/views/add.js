@@ -42,7 +42,7 @@ export function render(root, id) {
   function buyCard() {
     const institutions = [...new Set(s.investments.map((i) => i.institution).filter(Boolean))];
     return h('div', { class: 'card stack' },
-      h('h2', {}, '📈 Cash in: goes to the Invest page'),
+      h('h2', {}, 'Cash in: goes to the Invest page'),
       h('p', { class: 'muted', style: 'margin:0' }, 'Your daily account goes down and the holding goes up by the same amount, so your net worth stays the same.'),
       h('label', { class: 'field' }, 'Holding',
         h('select', { value: form.holding, onChange: (e) => { form.holding = e.target.value; draw(); } },
@@ -67,7 +67,7 @@ export function render(root, id) {
     if (form.holding === 'new') form.holding = s.investments[0].id;
     const hold = s.investments.find((i) => i.id === form.holding);
     return h('div', { class: 'card stack' },
-      h('h2', {}, '💵 Cash out: comes from the Invest page'),
+      h('h2', {}, 'Cash out: comes from the Invest page'),
       h('p', { class: 'muted', style: 'margin:0' }, 'The amount above is the cash you received. It goes into your daily account, and the value below comes off the holding. If you got more than it was worth, the difference is your profit.'),
       h('label', { class: 'field' }, 'Holding',
         h('select', { value: form.holding, onChange: (e) => { form.holding = e.target.value; draw(); } },
@@ -95,10 +95,10 @@ export function render(root, id) {
         }, t === 'expense' ? 'Expense' : 'Income'))),
       h('div', { class: 'card' }, amountEl),
       // which bank account, then how it was paid (cash / transfer / credit card), then the category
-      h('div', { class: 'card stack' }, h('h2', {}, '🏦 Account'),
+      h('div', { class: 'card stack' }, h('h2', {}, 'Account'),
         accountField(form, { label: form.type === 'expense' ? 'Paid from which account?' : 'Goes into which account?' }),
         methodField(form, { income: form.type === 'income', label: form.type === 'expense' ? 'How did you pay?' : 'How did it arrive?' })),
-      h('div', { class: 'card' }, h('h2', {}, '🦴 Category'),
+      h('div', { class: 'card' }, h('h2', {}, 'Category'),
         h('div', { class: 'chips' }, cats.map((c) => h('button', {
           class: `chip ${form.category === c ? 'on' : ''}`,
           onClick: () => { form.category = c; draw(); },
@@ -145,7 +145,7 @@ export function render(root, id) {
       st.settings.lastAccount = record.account;
       st.settings.lastMethod = form.method;
     }, { silent: true });
-    toast(link ? (isBuy() ? 'Saved! Added to Invest ✨' : 'Saved! Taken off Invest ✨') : 'Saved! ✨');
+    toast(link ? (isBuy() ? 'Saved! Added to Invest' : 'Saved! Taken off Invest') : 'Saved!');
     if (existing) location.hash = '#/history';
     else if (preset) location.hash = '#/invest';
     else {

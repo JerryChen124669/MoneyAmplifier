@@ -23,7 +23,7 @@ export function render(root) {
         h('div', { class: 'grow' }, c),
         // the Investment category is what links purchases to the Invest page, so it stays fixed
         (c === INVEST_CATEGORY && type === 'expense') || (c === INVEST_OUT_CATEGORY && type === 'income')
-          ? h('span', { class: 'muted' }, '🔒 linked to Invest page')
+          ? h('span', { class: 'muted' }, 'linked to Invest page')
           : [h('button', { 'aria-label': `Rename ${c}`, onClick: () => rename(type, c) }, 'Rename'),
             h('button', { class: 'btn-danger', 'aria-label': `Delete ${c}`, onClick: () => removeCat(type, c) }, '×')])),
       h('div', { class: 'row', style: 'margin-top:10px' }, input, h('button', { onClick: add }, 'Add')));
@@ -114,7 +114,7 @@ export function render(root) {
           onChange: (e) => {
             const v = e.target.value.trim();
             if (!/^[\w-]{0,80}$/.test(v)) return toast('That does not look like a key');
-            update((st) => { st.settings.twelveKey = v; }, { silent: true }); toast('Saved! ✨');
+            update((st) => { st.settings.twelveKey = v; }, { silent: true }); toast('Saved!');
           },
         }))),
     accountsCard(),

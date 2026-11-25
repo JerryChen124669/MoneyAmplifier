@@ -19,7 +19,7 @@ export function accountPicker(onChange, { label = 'Account' } = {}) {
   const sel = activeAccount();
   const chip = (id, text) => h('button', { class: `chip ${sel === id ? 'on' : ''}`, 'aria-pressed': sel === id ? 'true' : 'false', onClick: () => { ui.account = id; onChange(); } }, text);
   return h('div', { class: 'acct-picker', role: 'group', 'aria-label': label },
-    chip('all', '✨ All accounts'), getState().accounts.map((a) => chip(a.id, a.name)));
+    chip('all', 'All accounts'), getState().accounts.map((a) => chip(a.id, a.name)));
 }
 export function currentPeriod() {
   return periodKeyFor(today(), getState().settings.startDay);
@@ -131,7 +131,7 @@ export function flowRow(t, { meta = '' } = {}) {
   const buy = t.type === 'expense';
   const invAmount = t.holdValue ?? t.amount;
   const cash = { label: accountName(getState(), t.account), amount: buy ? -t.amount : t.amount };
-  const inv = { label: `📈 ${hold ? hold.name : 'Investment'}`, amount: buy ? invAmount : -invAmount };
+  const inv = { label: `${hold ? hold.name : 'Investment'}`, amount: buy ? invAmount : -invAmount };
   const side = (x, cls) => h('div', { class: `flow-side ${cls}` },
     h('div', { class: 'flow-name' }, x.label),
     h('div', { class: `flow-amt ${x.amount < 0 ? 'expense' : 'income'}` }, (x.amount < 0 ? '−' : '+') + money(Math.abs(x.amount), currency)));
@@ -166,7 +166,7 @@ export function toast(message) {
 }
 
 /** Colours for charts (works in light and dark). */
-export const PALETTE = ['#d9985f', '#8c5a3c', '#e9c9a0', '#7a9a7e', '#c27a52', '#e0b86b', '#a67c52', '#9db4a0', '#b56b4d', '#d4a59a', '#6e5b4a', '#f0d9b5'];
+export const PALETTE = ['#b59d8a', '#8fa393', '#c7a5a0', '#9ba3b3', '#d2c2a5', '#7f8f98', '#b9a1b0', '#a9b59c', '#c0ad98', '#8a8580', '#d0bdb6', '#b7c0c4'];
 
 export function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();

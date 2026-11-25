@@ -37,12 +37,12 @@ export function render(root) {
     prev ? h('div', { class: `muted ${now.net >= net(prev) ? 'income' : 'expense'}` },
       `${now.net >= net(prev) ? '▲' : '▼'} ${money(Math.abs(now.net - net(prev)), currency)} vs ${prev.month}`) : null,
     h('div', { class: 'stats', style: 'margin-top:12px' },
-      h('div', {}, h('span', { class: 'muted' }, '💵 Accounts'), h('b', {}, money(now.cash, currency))),
-      h('div', {}, h('span', { class: 'muted' }, '📈 Investments'), h('b', {}, money(now.invest, currency))),
-      h('div', {}, h('span', { class: 'muted' }, '💳 Debts'), h('b', { class: 'expense' }, money(now.debts, currency))))));
+      h('div', {}, h('span', { class: 'muted' }, 'Accounts'), h('b', {}, money(now.cash, currency))),
+      h('div', {}, h('span', { class: 'muted' }, 'Investments'), h('b', {}, money(now.invest, currency))),
+      h('div', {}, h('span', { class: 'muted' }, 'Debts'), h('b', { class: 'expense' }, money(now.debts, currency))))));
 
   // every account's balance
-  root.append(h('div', { class: 'card' }, h('h2', {}, '🏦 Accounts'),
+  root.append(h('div', { class: 'card' }, h('h2', {}, 'Accounts'),
     s.accounts.map((a) => {
       const bal = accountBalance(s, a.id);
       return h('div', { class: 'tx' },
@@ -60,7 +60,7 @@ export function render(root) {
   if (parts.length) {
     const d = donut(parts, currency);
     charts.push(d);
-    root.append(h('div', { class: 'card' }, h('h2', {}, '🥎 Where your money is'), d.el));
+    root.append(h('div', { class: 'card' }, h('h2', {}, 'Where your money is'), d.el));
   }
 
   // cash vs time and investments vs time: side by side on wide screens, one at a time (with a switch) on phones
@@ -101,8 +101,8 @@ export function render(root) {
       return chart;
     };
     const panes = [
-      { key: 'cash', label: '💵 Accounts', title: `${acct === 'all' ? 'All accounts' : acctRec.name} over time`, pts: cashPts, color: '#a8693a', soft: 'rgba(168,105,58,.16)', now: nowBalance },
-      { key: 'invest', label: '📈 Investments', title: 'Investments over time', pts: investPts, color: '#6f9a6b', soft: 'rgba(111,154,107,.2)', now: now.invest },
+      { key: 'cash', label: 'Accounts', title: `${acct === 'all' ? 'All accounts' : acctRec.name} over time`, pts: cashPts, color: '#8d7b6c', soft: 'rgba(141,123,108,.16)', now: nowBalance },
+      { key: 'invest', label: 'Investments', title: 'Investments over time', pts: investPts, color: '#7f9a86', soft: 'rgba(127,154,134,.2)', now: now.invest },
     ].map((p) => {
       p.canvas = h('canvas');
       const body = p.pts.length ? h('div', { class: 'chart-box' }, p.canvas) : empty('Nothing to chart yet.');
@@ -123,7 +123,7 @@ export function render(root) {
   // inputs that feed the net worth
   const openings = s.accounts.map((a) => ({ id: a.id, el: h('input', { type: 'number', inputmode: 'decimal', step: 'any', value: a.opening }) }));
   const debts = h('input', { type: 'number', inputmode: 'decimal', min: '0', step: 'any', value: s.profile.debts });
-  root.append(h('div', { class: 'card stack' }, h('h2', {}, '⚙️ What counts'),
+  root.append(h('div', { class: 'card stack' }, h('h2', {}, 'What counts'),
     h('p', { class: 'muted', style: 'margin:0' }, 'An account\'s balance = its starting balance + its income − its expenses. Investments come from the Invest tab. Add or rename accounts in Settings.'),
     s.accounts.map((a, i) => h('label', { class: 'field' }, `${a.name}: starting balance (before your first entry)`, openings[i].el)),
     h('label', { class: 'field' }, 'Total debts (loans, credit card balance owed…)', debts),
@@ -133,11 +133,11 @@ export function render(root) {
         const vals = openings.map((o) => parseFloat(o.el.value || '0')), d = parseFloat(debts.value || '0');
         if (vals.some((v) => !Number.isFinite(v)) || !(d >= 0)) return toast('Check the numbers');
         update((st) => { openings.forEach((o, i) => { st.accounts.find((a) => a.id === o.id).opening = vals[i]; }); st.profile.debts = d; });
-        toast('Saved! ✨');
+        toast('Saved!');
       },
     }, 'Save')));
 
-  root.append(h('div', { class: 'card' }, h('h2', {}, '🪀 Monthly snapshots'),
+  root.append(h('div', { class: 'card' }, h('h2', {}, 'Monthly snapshots'),
     rows.length ? [...rows].reverse().map((r) => h('div', { class: 'tx' },
       h('div', { class: 'grow' }, h('div', { class: 'name' }, r.month), h('div', { class: 'muted' }, `Cash ${money(r.cash, currency)} · Invest ${money(r.invest, currency)} · Debts ${money(r.debts, currency)}`)),
       h('div', { class: 'amt' }, money(net(r), currency)),

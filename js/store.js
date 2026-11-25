@@ -22,11 +22,11 @@ export const isAuto = (i) => !!i.ticker && i.shares > 0;
 
 // Accounts are the user's own bank accounts (typed in the first time, picked from a list afterwards).
 // How a payment was made is a separate tag: cash, transfer or credit card.
-const defaultAccounts = () => [{ id: 'main', name: '🏦 Account', opening: 0 }];
+const defaultAccounts = () => [{ id: 'main', name: 'Account', opening: 0 }];
 export const METHODS = [
-  { id: 'cash', label: '💵 Cash' },
-  { id: 'transfer', label: '🏦 Transfer' },
-  { id: 'card', label: '💳 Credit card' },
+  { id: 'cash', label: 'Cash' },
+  { id: 'transfer', label: 'Transfer' },
+  { id: 'card', label: 'Credit card' },
 ];
 export const methodLabel = (id) => (METHODS.find((m) => m.id === id) || { label: '' }).label;
 const LEGACY_ACCOUNTS = { cash: 'cash', bank: 'transfer', card: 'card' }; // the first version of accounts used these as 'accounts'
@@ -92,7 +92,7 @@ export function sanitize(raw) {
     out.accounts[0].opening = rawAccounts.reduce((a, x) => a + x.opening, 0);
     rawAccounts.forEach((a) => { accountMap[a.id] = 'main'; methodMap[a.id] = LEGACY_ACCOUNTS[a.id]; });
   } else if (rawAccounts.length) {
-    out.accounts = rawAccounts;
+    out.accounts = rawAccounts.map((a) => (a.name === '🏦 Account' ? { ...a, name: 'Account' } : a)); // the old default name had an emoji
   } else {
     out.accounts = defaultAccounts();
     if (Number.isFinite(num(p.openingCash))) out.accounts[0].opening = num(p.openingCash);

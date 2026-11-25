@@ -52,7 +52,7 @@ export function render(root) {
       const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
       chart = donut(entries, currency);
       chartBox.append(h('div', { class: 'card' },
-        h('h2', {}, filter.type === 'expense' ? '🎾 What you spent on' : '🧸 Where income came from'),
+        h('h2', {}, filter.type === 'expense' ? 'What you spent on' : 'Where income came from'),
         h('div', { class: `big ${filter.type}` }, money(sum(byType, (t) => t.amount), currency)),
         chart.el));
     }
