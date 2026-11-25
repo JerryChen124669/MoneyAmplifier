@@ -25,40 +25,40 @@ export function render(root) {
   const toInvest = sum(txs.filter((t) => isTransfer(t) && t.type === 'expense'), (t) => t.amount);
   const fromInvest = sum(txs.filter((t) => isTransfer(t) && t.type === 'income'), (t) => t.amount);
   const rerender = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
-  const scope = acct === 'all' ? 'all accounts' : accountName(s, acct);
+  const scope = acct === 'all' ? '所有帳戶' : accountName(s, acct);
 
-  const mood = !txs.length ? "Woof! Let's add your first entry"
-    : balance >= 0 ? `Yay! You're keeping ${money(balance, currency)} this month`
-    : "A little over this month. You've got this!";
+  const mood = !txs.length ? "汪！來記下第一筆吧"
+    : balance >= 0 ? `太棒了！這個月結餘 ${money(balance, currency)}`
+    : "這個月稍微超支了，加油！";
 
   root.append(
     monthNav(rerender),
     accountPicker(rerender),
     h('div', { class: 'card mood' }, mood),
     h('div', { class: 'card' },
-      h('div', { class: 'muted' }, `Left over (income − spending) · ${scope}`),
+      h('div', { class: 'muted' }, `結餘（收入 − 支出）· ${scope}`),
       h('div', { class: `big ${balance >= 0 ? 'income' : 'expense'}` }, money(balance, currency)),
       h('div', { class: 'stats', style: 'margin-top:12px' },
-        h('div', {}, h('span', { class: 'muted' }, 'Income'), h('b', { class: 'income' }, money(income, currency))),
-        h('div', {}, h('span', { class: 'muted' }, 'Spent'), h('b', { class: 'expense' }, money(expense, currency))),
-        h('div', {}, h('span', { class: 'muted' }, 'Entries'), h('b', {}, txs.length))),
+        h('div', {}, h('span', { class: 'muted' }, '收入'), h('b', { class: 'income' }, money(income, currency))),
+        h('div', {}, h('span', { class: 'muted' }, '支出'), h('b', { class: 'expense' }, money(expense, currency))),
+        h('div', {}, h('span', { class: 'muted' }, '筆數'), h('b', {}, txs.length))),
       toInvest || fromInvest ? h('div', { class: 'muted', style: 'margin-top:10px' },
-        `To investments ${money(toInvest, currency)} · cashed out ${money(fromInvest, currency)}`) : null));
+        `轉入投資 ${money(toInvest, currency)} · 投資贖回 ${money(fromInvest, currency)}`) : null));
 
   const nw = netWorthNow(s);
   root.append(h('a', { class: 'card nw-link', href: '#/wealth' },
     h('div', { class: 'grow' },
-      h('div', { class: 'muted' }, 'Net worth · all accounts + investments − debts'),
+      h('div', { class: 'muted' }, '淨資產 · 所有帳戶 + 投資 − 負債'),
       h('div', { class: `big ${nw.net >= 0 ? 'income' : 'expense'}` }, money(nw.net, currency))),
     h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')));
 
   // Spending / Income switch for the two charts below
   root.append(h('div', { class: 'segmented', style: 'margin-bottom:14px' },
-    [['expense', 'Spending'], ['income', 'Income']].map(([k, label]) =>
+    [['expense', '支出'], ['income', '收入']].map(([k, label]) =>
       h('button', { class: flow === k ? 'on' : '', onClick: () => { ui.flow = k; rerender(); } }, label))));
 
   const charts = [];
-  const spendWord = flow === 'expense' ? 'spending' : 'income';
+  const spendWord = flow === 'expense' ? '支出' : '收入';
 
   // month-by-month columns; the dashed average line is only for All accounts
   const totalIn = (key) => {
@@ -68,25 +68,25 @@ export function render(root) {
   const firstDate = s.transactions.reduce((m, t) => (!m || t.date < m ? t.date : m), '');
   const firstKey = firstDate ? periodKeyFor(firstDate, startDay) : null;
   const keys = Array.from({ length: MONTHS_SHOWN }, (_, i) => shiftKey(active, i - (MONTHS_SHOWN - 1))).filter((k) => firstKey && k >= firstKey);
-  const monthlyCard = h('div', { class: 'card' }, h('h2', {}, `Monthly ${spendWord}`));
+  const monthlyCard = h('div', { class: 'card' }, h('h2', {}, `每月${spendWord}`));
   if (!keys.length) {
-    monthlyCard.append(empty('Add a few entries to see your month-by-month chart.'));
+    monthlyCard.append(empty('多記幾筆，就能看到每月圖表。'));
   } else if (typeof Chart !== 'undefined') {
     const values = keys.map(totalIn);
     const avg = sum(values) / values.length;
     const labels = keys.map((k) => {
       const [y, m] = k.split('-').map(Number);
-      return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'short' });
+      return new Date(y, m - 1, 1).toLocaleDateString('zh-TW', { month: 'short' });
     });
-    const compact = new Intl.NumberFormat(undefined, { notation: 'compact' });
+    const compact = new Intl.NumberFormat('zh-TW', { notation: 'compact' });
     monthlyCard.append(h('div', { class: 'muted' }, acct === 'all'
-      ? `Average ${money(avg, currency)} / month over the last ${keys.length} month${keys.length === 1 ? '' : 's'} · investments not counted`
-      : `${scope} only · investments not counted`));
+      ? `近 ${keys.length} 個月平均每月 ${money(avg, currency)} · 不含投資`
+      : `僅 ${scope} · 不含投資`));
     const canvas = h('canvas');
     monthlyCard.append(h('div', { class: 'chart-box' }, canvas));
-    const avgLabel = `${keys.length}-month average`;
+    const avgLabel = `${keys.length} 個月平均`;
     const datasets = [
-      { type: 'bar', label: flow === 'expense' ? 'Spent' : 'Earned', data: values, borderRadius: 8, backgroundColor: keys.map((k) => (k === active ? (flow === 'expense' ? '#c4745a' : '#5f9a82') : cssVar('--line'))), order: 2 },
+      { type: 'bar', label: flow === 'expense' ? '支出' : '收入', data: values, borderRadius: 8, backgroundColor: keys.map((k) => (k === active ? (flow === 'expense' ? '#c4745a' : '#5f9a82') : cssVar('--line'))), order: 2 },
     ];
     if (acct === 'all') {
       datasets.push({ type: 'line', label: avgLabel, data: values.map(() => avg), borderColor: cssVar('--text'), borderDash: [6, 5], borderWidth: 2, pointRadius: 0, fill: false, order: 1 });
@@ -113,9 +113,9 @@ export function render(root) {
   const byCat = {};
   (flow === 'expense' ? spent : earned).forEach((t) => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
   const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-  const chartCard = h('div', { class: 'card' }, h('h2', {}, flow === 'expense' ? 'Spending by category' : 'Income by category'));
+  const chartCard = h('div', { class: 'card' }, h('h2', {}, flow === 'expense' ? '支出類別' : '收入類別'));
   if (!cats.length) {
-    chartCard.append(empty(`No ${spendWord} in this period${acct === 'all' ? '' : ' for ' + scope} yet. Tap + to add one.`));
+    chartCard.append(empty(`這段期間${acct === 'all' ? '' : '在 ' + scope + ' '}還沒有${spendWord}紀錄，點 + 新增一筆。`));
   } else if (typeof Chart !== 'undefined') {
     const canvas = h('canvas');
     chartCard.append(h('div', { class: 'chart-box' }, canvas));
@@ -128,9 +128,9 @@ export function render(root) {
   root.append(chartCard);
 
   const recent = [...txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
-  root.append(h('div', { class: 'card' }, h('h2', {}, 'Recent'),
-    recent.length ? recent.map(txRow) : empty('Nothing recorded yet.'),
-    recent.length ? h('a', { href: '#/history', class: 'muted' }, 'See all →') : null));
+  root.append(h('div', { class: 'card' }, h('h2', {}, '最近紀錄'),
+    recent.length ? recent.map(txRow) : empty('還沒有紀錄。'),
+    recent.length ? h('a', { href: '#/history', class: 'muted' }, '查看全部 →') : null));
 
   return () => charts.forEach((c) => c.destroy());
 }

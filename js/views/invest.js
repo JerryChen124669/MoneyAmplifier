@@ -3,11 +3,11 @@
 //   + Add investment (first purchase), + Buy more, and 💵 Cash out. Edits and deletes are undone on the holding too.
 // Holdings with a ticker + shares are re-priced automatically (see prices.js).
 import { h, uid, today, money, sum } from '../util.js';
-import { getState, update, commitTx, ensureAccount, INVEST_TYPES, TYPE_EMOJI, INVEST_CATEGORY, INVEST_OUT_CATEGORY, investTotal, isAuto, isTransfer } from '../store.js';
+import { getState, update, commitTx, ensureAccount, INVEST_TYPES, TYPE_EMOJI, TYPE_LABEL, INVEST_CATEGORY, INVEST_OUT_CATEGORY, investTotal, isAuto, isTransfer } from '../store.js';
 import { toast, empty, donut, flowRow, accountField, methodField } from '../components.js';
 import { refreshPrices } from '../prices.js';
 
-export const title = 'Investments';
+export const title = '投資';
 
 const numOf = (v) => parseFloat(String(v ?? '').replace(/,/g, ''));
 
@@ -47,75 +47,75 @@ export function render(root) {
 
     const auto = s.investments.filter(isAuto);
     const lastPriced = auto.map((i) => i.priceDate).filter(Boolean).sort().pop();
-    const refreshBtn = h('button', { class: 'btn-block', style: 'margin-top:10px' }, '↻ Update prices now');
+    const refreshBtn = h('button', { class: 'btn-block', style: 'margin-top:10px' }, '↻ 立即更新價格');
     refreshBtn.addEventListener('click', async () => {
-      refreshBtn.disabled = true; refreshBtn.textContent = 'Updating…';
+      refreshBtn.disabled = true; refreshBtn.textContent = '更新中…';
       try {
         const r = await refreshPrices();
-        toast(r.errors.length ? r.errors[0] : `Updated ${r.updated} price${r.updated === 1 ? '' : 's'}`);
-      } catch (e) { toast('Could not update prices'); }
-      refreshBtn.disabled = false; refreshBtn.textContent = '↻ Update prices now';
+        toast(r.errors.length ? r.errors[0] : `已更新 ${r.updated} 筆價格`);
+      } catch (e) { toast('無法更新價格'); }
+      refreshBtn.disabled = false; refreshBtn.textContent = '↻ 立即更新價格';
     });
     root.append(h('div', { class: 'card' },
-      h('div', { class: 'muted' }, 'Total invested value'),
+      h('div', { class: 'muted' }, '投資總值'),
       h('div', { class: 'big' }, money(total, currency)),
-      h('div', { class: 'muted' }, `${s.investments.length} holding${s.investments.length === 1 ? '' : 's'}`
-        + (auto.length ? ` · ${auto.length} auto-priced${lastPriced ? ', last updated ' + lastPriced : ''}` : '')),
+      h('div', { class: 'muted' }, `${s.investments.length} 項投資`
+        + (auto.length ? ` · ${auto.length} 項自動報價${lastPriced ? '，最後更新 ' + lastPriced : ''}` : '')),
       auto.length ? refreshBtn : null));
 
     if (view.mode === 'new' || view.mode === 'edit') root.append(editCard());
     else if (view.mode === 'buy' || view.mode === 'sell') root.append(moveCard());
     else {
       root.append(h('div', { class: 'row', style: 'margin-bottom:14px' },
-        h('button', { class: 'btn-primary grow', onClick: () => open('new') }, '+ Add investment'),
-        h('button', { class: 'grow', disabled: !held().length, onClick: () => open('sell') }, 'Cash out')));
+        h('button', { class: 'btn-primary grow', onClick: () => open('new') }, '+ 新增投資'),
+        h('button', { class: 'grow', disabled: !held().length, onClick: () => open('sell') }, '贖回')));
     }
 
     if (!s.investments.length) {
-      root.append(h('div', { class: 'card' }, empty('No investments yet. Add a stock, ETF, bond, fund…')));
+      root.append(h('div', { class: 'card' }, empty('還沒有投資，新增股票、ETF、債券、基金…')));
       return;
     }
 
     // composition
-    const groupBy = view.group === 'type' ? (i) => i.type : (i) => i.institution || 'No institution';
+    const groupBy = view.group === 'type' ? (i) => TYPE_LABEL[i.type] : (i) => i.institution || '未填機構';
     const totals = {};
     s.investments.forEach((i) => { const k = groupBy(i); totals[k] = (totals[k] || 0) + i.amount; });
     const entries = Object.entries(totals).filter((e) => e[1] > 0).sort((a, b) => b[1] - a[1]);
     chart = entries.length ? donut(entries, currency) : null;
     root.append(h('div', { class: 'card' },
-      h('h2', {}, 'Composition'),
+      h('h2', {}, '投資組成'),
       h('div', { class: 'segmented', style: 'margin-bottom:10px' },
-        [['type', 'By type'], ['institution', 'By institution']].map(([k, label]) =>
+        [['type', '依類型'], ['institution', '依機構']].map(([k, label]) =>
           h('button', { class: view.group === k ? 'on' : '', onClick: () => { view.group = k; draw(); } }, label))),
-      chart ? chart.el : empty('All holdings are worth 0.')));
+      chart ? chart.el : empty('所有投資的價值都是 0。')));
 
     // list, grouped by institution; every holding has its own Buy more / Cash out buttons
     const byInst = {};
-    s.investments.forEach((i) => (byInst[i.institution || 'No institution'] ||= []).push(i));
-    root.append(h('h2', { class: 'section-title' }, 'Holdings'));
+    s.investments.forEach((i) => (byInst[i.institution || '未填機構'] ||= []).push(i));
+    root.append(h('h2', { class: 'section-title' }, '持有項目'));
     Object.entries(byInst).sort((a, b) => sum(b[1], (x) => x.amount) - sum(a[1], (x) => x.amount)).forEach(([inst, items]) => {
       root.append(h('div', { class: 'day-head' }, h('span', {}, inst), h('span', {}, money(sum(items, (x) => x.amount), currency))),
         h('div', { class: 'card', style: 'padding:4px 16px;margin-bottom:0' },
           [...items].sort((a, b) => b.amount - a.amount).map((i) => h('div', { class: `holding${i.amount <= 0 ? ' sold-out' : ''}` },
             h('button', { class: 'tx tx-btn', onClick: () => open('edit', i.id) },
               h('div', { class: 'grow' },
-                h('div', { class: 'name' }, `${TYPE_EMOJI[i.type]} ${i.name}${i.amount <= 0 ? ' · sold out' : ''}`),
+                h('div', { class: 'name' }, `${TYPE_EMOJI[i.type]} ${i.name}${i.amount <= 0 ? ' · 已全數贖回' : ''}`),
                 h('div', { class: 'muted' }, isAuto(i) && i.price
                   ? `${i.shares} × ${i.price}${i.priceCur ? ' ' + i.priceCur : ''} · ${i.priceDate}`
-                  : `${i.type} · updated ${i.updated}`)),
+                  : `${TYPE_LABEL[i.type]} · 更新於 ${i.updated}`)),
               h('div', { class: 'amt' }, money(i.amount, currency))),
             h('div', { class: 'actions' },
-              h('button', { class: 'mini', onClick: () => open('buy', i.id) }, '＋ Buy more'),
-              i.amount > 0 ? h('button', { class: 'mini', onClick: () => open('sell', i.id) }, 'Cash out') : null)))));
+              h('button', { class: 'mini', onClick: () => open('buy', i.id) }, '＋ 加碼'),
+              i.amount > 0 ? h('button', { class: 'mini', onClick: () => open('sell', i.id) }, '贖回') : null)))));
     });
 
     // recent money in / out
     const moves = s.transactions.filter(isTransfer).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
-    root.append(h('h2', { class: 'section-title' }, 'Cash in / out'),
+    root.append(h('h2', { class: 'section-title' }, '資金進出'),
       h('div', { class: 'card', style: 'margin-top:8px' },
         moves.length ? moves.map((t) => flowRow(t, { meta: t.date }))
-          : empty('Nothing yet. Buy more or cash out and it shows up here.'),
-        moves.length ? h('a', { href: '#/history', class: 'muted' }, 'See all in History →') : null));
+          : empty('還沒有紀錄。加碼或贖回後會顯示在這裡。'),
+        moves.length ? h('a', { href: '#/history', class: 'muted' }, '到紀錄頁查看全部 →') : null));
   }
 
   // ---- Buy more / Cash out ----
@@ -128,48 +128,48 @@ export function render(root) {
 
     const save = () => {
       const amount = numOf(f.amount);
-      if (!hold) return toast('Pick a holding');
-      if (!(amount > 0)) return toast(sell ? 'Enter the cash you received' : 'Enter the amount you paid');
-      if (!f.accountName.trim()) return toast('Type or pick an account');
+      if (!hold) return toast('請選擇投資項目');
+      if (!(amount > 0)) return toast(sell ? '請輸入收到的現金' : '請輸入支付金額');
+      if (!f.accountName.trim()) return toast('請輸入或選擇帳戶');
       const base = { id: uid(), amount, date: f.date || today(), note: f.note.trim(), method: f.method };
       if (sell) {
         const removed = Math.min(f.removed.trim() ? numOf(f.removed) : amount, hold.amount);
-        if (!(removed > 0)) return toast('Nothing left in that holding to take off');
+        if (!(removed > 0)) return toast('這項投資已沒有可扣除的價值');
         let shares = numOf(f.shares);
         if (!(shares > 0)) shares = hold.shares > 0 && hold.amount > 0 ? hold.shares * Math.min(1, removed / hold.amount) : 0;
         const rec = { ...base, type: 'income', category: INVEST_OUT_CATEGORY };
         update((st) => { rec.account = ensureAccount(st, f.accountName); commitTx(st, rec, null, { pick: { id: hold.id }, holdValue: removed, shares }); st.settings.lastAccount = rec.account; st.settings.lastMethod = f.method; }, { silent: true });
-        toast('Cashed out! Added to Income');
+        toast('已贖回！已記入收入');
       } else {
         const shares = numOf(f.shares);
         const rec = { ...base, type: 'expense', category: INVEST_CATEGORY };
         update((st) => { rec.account = ensureAccount(st, f.accountName); commitTx(st, rec, null, { pick: { id: hold.id }, holdValue: amount, shares: shares > 0 ? shares : 0 }); st.settings.lastAccount = rec.account; st.settings.lastMethod = f.method; }, { silent: true });
-        toast('Saved! Added to Expenses');
+        toast('已儲存！已記入支出');
       }
       rerender();
     };
 
     return h('div', { class: 'card stack' },
-      h('h2', {}, sell ? 'Cash out' : '＋ Buy more'),
+      h('h2', {}, sell ? '贖回' : '＋ 加碼'),
       h('p', { class: 'muted', style: 'margin:0' }, sell
-        ? 'The cash you receive goes into your account as Income, and the value you take off comes out of the holding. If you got more than it was worth, the difference is your profit.'
-        : 'The amount you pay comes out of your account as an Expense and goes into the holding, so your net worth stays the same.'),
-      h('label', { class: 'field' }, 'Holding',
+        ? '收到的現金會以收入記入帳戶，扣除的價值會從投資中減少。若拿回的金額比原本價值高，差額就是你的獲利。'
+        : '支付的金額會以支出從帳戶扣除並加到這項投資，所以淨資產不變。'),
+      h('label', { class: 'field' }, '投資項目',
         h('select', { value: f.id, onChange: (e) => { f.id = e.target.value; draw(); } }, choices.map((i) => h('option', { value: i.id }, label(i))))),
-      acctBlock(f, { label: sell ? 'Cash goes into which account?' : 'Paid from which account?', income: sell }),
-      h('label', { class: 'field' }, sell ? 'Cash received' : 'Amount paid',
+      acctBlock(f, { label: sell ? '現金存入哪個帳戶？' : '從哪個帳戶支付？', income: sell }),
+      h('label', { class: 'field' }, sell ? '收到的現金' : '支付金額',
         h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.amount, onInput: (e) => { f.amount = e.target.value; } })),
-      sell ? h('label', { class: 'field' }, 'Value taken off the holding (blank = same as the cash received)',
+      sell ? h('label', { class: 'field' }, '從投資扣除的價值（留空 = 與收到的現金相同）',
         h('div', { class: 'row' },
-          h('input', { type: 'text', inputmode: 'decimal', placeholder: 'same as cash received', style: 'margin:0', value: f.removed, onInput: (e) => { f.removed = e.target.value; } }),
-          h('button', { type: 'button', onClick: () => { f.removed = String(hold ? hold.amount : ''); draw(); } }, 'All'))) : null,
+          h('input', { type: 'text', inputmode: 'decimal', placeholder: '與收到的現金相同', style: 'margin:0', value: f.removed, onInput: (e) => { f.removed = e.target.value; } }),
+          h('button', { type: 'button', onClick: () => { f.removed = String(hold ? hold.amount : ''); draw(); } }, '全部'))) : null,
       !sell || (hold && hold.shares > 0) ? h('label', { class: 'field' },
-        sell ? `Shares / units sold (blank = in proportion; you hold ${hold.shares})` : 'Shares / units bought (optional)',
+        sell ? `賣出股數／單位（留空 = 按比例；你持有 ${hold.shares}）` : '買入股數／單位（選填）',
         h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.shares, onInput: (e) => { f.shares = e.target.value; } })) : null,
-      h('label', { class: 'field' }, 'Date', h('input', { type: 'date', value: f.date, onChange: (e) => { f.date = e.target.value; } })),
-      h('label', { class: 'field' }, 'Note (optional)', h('input', { type: 'text', maxlength: '200', value: f.note, onInput: (e) => { f.note = e.target.value; } })),
-      h('button', { class: 'btn-primary btn-block', onClick: save }, sell ? 'Cash out' : 'Save'),
-      h('button', { class: 'btn-block', onClick: close }, 'Cancel'));
+      h('label', { class: 'field' }, '日期', h('input', { type: 'date', value: f.date, onChange: (e) => { f.date = e.target.value; } })),
+      h('label', { class: 'field' }, '備註（選填）', h('input', { type: 'text', maxlength: '200', value: f.note, onInput: (e) => { f.note = e.target.value; } })),
+      h('button', { class: 'btn-primary btn-block', onClick: save }, sell ? '贖回' : '儲存'),
+      h('button', { class: 'btn-block', onClick: close }, '取消'));
   }
 
   // ---- add / edit a holding ----
@@ -181,9 +181,9 @@ export function render(root) {
     const save = () => {
       const amount = numOf(f.amount);
       const shares = numOf(f.shares);
-      if (!f.name.trim()) return toast('Enter a name');
-      if (!(amount >= 0)) return toast('Enter the current amount');
-      if (f.ticker.trim() && !(shares > 0)) return toast('Enter how many shares / units you hold to price it automatically');
+      if (!f.name.trim()) return toast('請輸入名稱');
+      if (!(amount >= 0)) return toast('請輸入目前金額');
+      if (f.ticker.trim() && !(shares > 0)) return toast('要自動報價，請輸入持有的股數／單位');
       const base = { name: f.name.trim(), type: f.type, institution: f.institution.trim(), ticker: f.ticker.trim(), shares: shares > 0 ? shares : 0 };
       if (existing) {
         update((st) => { Object.assign(st.investments.find((i) => i.id === existing.id), base, { amount, updated: today() }); }, { silent: true });
@@ -194,44 +194,44 @@ export function render(root) {
       } else {
         update((st) => { st.investments.push({ id: uid(), ...base, amount, updated: today(), priceCur: '', price: 0, priceDate: '' }); }, { silent: true });
       }
-      toast(!existing && f.record && amount > 0 ? 'Saved! Recorded as an expense' : 'Saved!');
+      toast(!existing && f.record && amount > 0 ? '已儲存！已記為支出' : '已儲存！');
       rerender();
     };
     const remove = () => {
-      if (!confirm(`Delete "${existing.name}"? Past expense / income entries for it stay in History.`)) return;
+      if (!confirm(`刪除「${existing.name}」？它過去的支出／收入紀錄仍會留在紀錄頁。`)) return;
       update((st) => { st.investments = st.investments.filter((i) => i.id !== existing.id); }, { silent: true });
       rerender();
     };
 
     return h('div', { class: 'card stack' },
-      h('h2', {}, existing ? 'Edit investment' : 'New investment'),
-      h('label', { class: 'field' }, 'Name (e.g. TSMC, 0050, US Treasury 10Y)', h('input', { type: 'text', maxlength: '60', value: f.name, onInput: (e) => { f.name = e.target.value; } })),
-      h('label', { class: 'field' }, 'Type',
-        h('select', { value: f.type, onChange: (e) => { f.type = e.target.value; } }, INVEST_TYPES.map((t) => h('option', { value: t }, `${TYPE_EMOJI[t]} ${t}`)))),
-      h('label', { class: 'field' }, 'Institution managing it (bank, broker, fund company…)',
+      h('h2', {}, existing ? '編輯投資' : '新增投資'),
+      h('label', { class: 'field' }, '名稱（例如：台積電、0050、美國公債 10 年）', h('input', { type: 'text', maxlength: '60', value: f.name, onInput: (e) => { f.name = e.target.value; } })),
+      h('label', { class: 'field' }, '類型',
+        h('select', { value: f.type, onChange: (e) => { f.type = e.target.value; } }, INVEST_TYPES.map((t) => h('option', { value: t }, `${TYPE_EMOJI[t]} ${TYPE_LABEL[t]}`)))),
+      h('label', { class: 'field' }, '管理機構（銀行、券商、基金公司…）',
         h('input', { type: 'text', maxlength: '60', list: 'institution-list', value: f.institution, onInput: (e) => { f.institution = e.target.value; } }),
         h('datalist', { id: 'institution-list' }, institutions.map((i) => h('option', { value: i })))),
-      h('label', { class: 'field' }, existing ? 'Current value' : 'Amount invested (current value)',
+      h('label', { class: 'field' }, existing ? '目前價值' : '投入金額（目前價值）',
         h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.amount, onInput: (e) => { f.amount = e.target.value; } })),
       h('details', { class: 'more', open: !!(f.ticker || f.shares) },
-        h('summary', {}, 'Automatic price updates (optional)'),
+        h('summary', {}, '自動更新價格（選填）'),
         h('div', { class: 'stack', style: 'margin-top:10px' },
-          h('p', { class: 'muted', style: 'margin:0' }, 'Enter a ticker and how many shares / units you hold, and the value is refreshed daily when you open the app. Crypto: use the CoinGecko id (bitcoin, ethereum). Stocks / ETFs: a Twelve Data symbol (AAPL, VOO); needs a free key in Settings.'),
-          h('label', { class: 'field' }, 'Ticker', h('input', { type: 'text', maxlength: '30', autocapitalize: 'off', value: f.ticker, onInput: (e) => { f.ticker = e.target.value; } })),
-          h('label', { class: 'field' }, 'Shares / units held', h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.shares, onInput: (e) => { f.shares = e.target.value; } })))),
+          h('p', { class: 'muted', style: 'margin:0' }, '輸入代號和持有的股數／單位，每天開啟 App 時會自動更新價值。加密貨幣請填 CoinGecko 的 id（bitcoin、ethereum）；股票／ETF 請填 Twelve Data 代號（AAPL、VOO），並在設定中填入免費金鑰。'),
+          h('label', { class: 'field' }, '代號', h('input', { type: 'text', maxlength: '30', autocapitalize: 'off', value: f.ticker, onInput: (e) => { f.ticker = e.target.value; } })),
+          h('label', { class: 'field' }, '持有股數／單位', h('input', { type: 'text', inputmode: 'decimal', placeholder: '0', value: f.shares, onInput: (e) => { f.shares = e.target.value; } })))),
       existing ? null : [
-        acctBlock(f, { label: 'Paid from which account? (used when recorded as an expense)' }),
-        h('label', { class: 'field' }, 'Date bought', h('input', { type: 'date', value: f.date, onChange: (e) => { f.date = e.target.value; } })),
+        acctBlock(f, { label: '從哪個帳戶支付？（記為支出時使用）' }),
+        h('label', { class: 'field' }, '買入日期', h('input', { type: 'date', value: f.date, onChange: (e) => { f.date = e.target.value; } })),
         h('label', { class: 'check' },
           h('input', { type: 'checkbox', checked: f.record, onChange: (e) => { f.record = e.target.checked; } }),
-          h('span', {}, 'Also record this as an Expense (paid from my account). Untick it if you already owned this before using the app.')),
+          h('span', {}, '同時記為一筆支出（從我的帳戶支付）。如果在使用 App 之前就已持有，請取消勾選。')),
       ],
-      h('button', { class: 'btn-primary btn-block', onClick: save }, existing ? 'Save changes' : 'Add'),
+      h('button', { class: 'btn-primary btn-block', onClick: save }, existing ? '儲存變更' : '新增'),
       existing ? h('div', { class: 'row' },
-        h('button', { class: 'grow', onClick: () => open('buy', existing.id) }, '＋ Buy more'),
-        existing.amount > 0 ? h('button', { class: 'grow', onClick: () => open('sell', existing.id) }, 'Cash out') : null) : null,
-      existing ? h('button', { class: 'btn-danger btn-block', onClick: remove }, 'Delete') : null,
-      h('button', { class: 'btn-block', onClick: close }, 'Cancel'));
+        h('button', { class: 'grow', onClick: () => open('buy', existing.id) }, '＋ 加碼'),
+        existing.amount > 0 ? h('button', { class: 'grow', onClick: () => open('sell', existing.id) }, '贖回') : null) : null,
+      existing ? h('button', { class: 'btn-danger btn-block', onClick: remove }, '刪除') : null,
+      h('button', { class: 'btn-block', onClick: close }, '取消'));
   }
 
   draw();

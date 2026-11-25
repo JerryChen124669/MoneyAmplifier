@@ -15,11 +15,11 @@ export function activeAccount() {
 export const inAccount = (t) => activeAccount() === 'all' || t.account === ui.account;
 
 /** Chips: All accounts + one per account. Picking one changes what the charts and lists show. */
-export function accountPicker(onChange, { label = 'Account' } = {}) {
+export function accountPicker(onChange, { label = '帳戶' } = {}) {
   const sel = activeAccount();
   const chip = (id, text) => h('button', { class: `chip ${sel === id ? 'on' : ''}`, 'aria-pressed': sel === id ? 'true' : 'false', onClick: () => { ui.account = id; onChange(); } }, text);
   return h('div', { class: 'acct-picker', role: 'group', 'aria-label': label },
-    chip('all', 'All accounts'), getState().accounts.map((a) => chip(a.id, a.name)));
+    chip('all', '所有帳戶'), getState().accounts.map((a) => chip(a.id, a.name)));
 }
 export function currentPeriod() {
   return periodKeyFor(today(), getState().settings.startDay);
@@ -33,10 +33,10 @@ export function monthNav(onChange) {
   const { startDay } = getState().settings;
   const go = (delta) => { ui.period = shiftKey(activePeriod(), delta); onChange(); };
   return h('div', { class: 'month-nav' },
-    h('button', { 'aria-label': 'Previous period', onClick: () => go(-1) }, '‹'),
+    h('button', { 'aria-label': '上一期', onClick: () => go(-1) }, '‹'),
     h('button', { class: 'month-label', 'aria-haspopup': 'dialog', onClick: () => openMonthPicker(onChange) },
       periodLabel(activePeriod(), startDay), h('span', { 'aria-hidden': 'true' }, ' ▾')),
-    h('button', { 'aria-label': 'Next period', onClick: () => go(1) }, '›'));
+    h('button', { 'aria-label': '下一期', onClick: () => go(1) }, '›'));
 }
 
 /** Pop-up calendar: pick a year with ‹ ›, then tap a month. A dot marks months that have entries. */
@@ -55,25 +55,25 @@ function openMonthPicker(onChange) {
   const onKey = (e) => { if (e.key === 'Escape') close(); };
   const pick = (key) => { ui.period = key; close(); onChange(); };
 
-  const panel = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Choose month' });
+  const panel = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': '選擇月份' });
   const overlay = h('div', { class: 'sheet-backdrop', onClick: (e) => { if (e.target === overlay) close(); } }, panel);
 
   function draw() {
     panel.replaceChildren(
       h('div', { class: 'sheet-head' },
-        h('button', { 'aria-label': 'Previous year', onClick: () => { year -= 1; draw(); } }, '‹'),
+        h('button', { 'aria-label': '上一年', onClick: () => { year -= 1; draw(); } }, '‹'),
         h('strong', {}, String(year)),
-        h('button', { 'aria-label': 'Next year', onClick: () => { year += 1; draw(); } }, '›')),
+        h('button', { 'aria-label': '下一年', onClick: () => { year += 1; draw(); } }, '›')),
       h('div', { class: 'month-grid' }, Array.from({ length: 12 }, (_, i) => {
         const key = `${year}-${String(i + 1).padStart(2, '0')}`;
         const cls = [key === selected ? 'on' : '', key === now ? 'now' : '', used.has(key) ? 'has' : ''].join(' ').trim();
         return h('button', { class: cls, 'aria-pressed': key === selected ? 'true' : 'false', onClick: () => pick(key) },
-          new Date(year, i, 1).toLocaleDateString(undefined, { month: 'short' }));
+          new Date(year, i, 1).toLocaleDateString('zh-TW', { month: 'short' }));
       })),
-      startDay !== 1 ? h('p', { class: 'muted', style: 'margin:10px 4px 0' }, `Each month runs from day ${startDay} to day ${startDay - 1} of the next.`) : '',
+      startDay !== 1 ? h('p', { class: 'muted', style: 'margin:10px 4px 0' }, `每個月從 ${startDay} 日算到下個月 ${startDay - 1} 日。`) : '',
       h('div', { class: 'row', style: 'margin-top:12px' },
-        h('button', { class: 'grow', onClick: () => pick(now) }, 'This month'),
-        h('button', { class: 'grow', onClick: close }, 'Close')));
+        h('button', { class: 'grow', onClick: () => pick(now) }, '本月'),
+        h('button', { class: 'grow', onClick: close }, '關閉')));
   }
   draw();
   document.body.append(overlay);
@@ -87,7 +87,7 @@ function openMonthPicker(onChange) {
  * Which bank account: a text box that suggests accounts you typed before (like the institution box on the Invest page),
  * plus one-tap chips for them. Typing a new name creates the account when the entry is saved. Uses f.accountName.
  */
-export function accountField(f, { label = 'Account' } = {}) {
+export function accountField(f, { label = '帳戶' } = {}) {
   const s = getState();
   const listId = 'account-suggestions';
   const same = (name) => f.accountName.trim().toLowerCase() === name.toLowerCase();
@@ -96,7 +96,7 @@ export function accountField(f, { label = 'Account' } = {}) {
   }, a.name));
   const sync = () => chips.forEach((c, i) => c.classList.toggle('on', same(s.accounts[i].name)));
   const input = h('input', {
-    type: 'text', maxlength: '40', list: listId, autocomplete: 'off', placeholder: 'Type your account, e.g. Fubon Bank',
+    type: 'text', maxlength: '40', list: listId, autocomplete: 'off', placeholder: '輸入帳戶，例如：富邦銀行',
     value: f.accountName, onInput: (e) => { f.accountName = e.target.value; sync(); },
   });
   sync();
@@ -106,7 +106,7 @@ export function accountField(f, { label = 'Account' } = {}) {
 }
 
 /** How it was paid: Cash / Transfer / Credit card (income: Cash / Transfer). Uses f.method; tap the chosen one again to clear it. */
-export function methodField(f, { income = false, label = 'How was it paid?' } = {}) {
+export function methodField(f, { income = false, label = '付款方式' } = {}) {
   const list = income ? METHODS.filter((m) => m.id !== 'card') : METHODS;
   const chips = list.map((m) => h('button', {
     type: 'button', class: 'chip', onClick: () => { f.method = f.method === m.id ? '' : m.id; sync(); },
@@ -131,7 +131,7 @@ export function flowRow(t, { meta = '' } = {}) {
   const buy = t.type === 'expense';
   const invAmount = t.holdValue ?? t.amount;
   const cash = { label: accountName(getState(), t.account), amount: buy ? -t.amount : t.amount };
-  const inv = { label: `${hold ? hold.name : 'Investment'}`, amount: buy ? invAmount : -invAmount };
+  const inv = { label: `${hold ? hold.name : '投資'}`, amount: buy ? invAmount : -invAmount };
   const side = (x, cls) => h('div', { class: `flow-side ${cls}` },
     h('div', { class: 'flow-name' }, x.label),
     h('div', { class: `flow-amt ${x.amount < 0 ? 'expense' : 'income'}` }, (x.amount < 0 ? '−' : '+') + money(Math.abs(x.amount), currency)));
@@ -149,7 +149,7 @@ export function txRow(t) {
   const sub = [accountName(getState(), t.account), methodLabel(t.method), txNote(t)].filter(Boolean).join(' · ');
   return h('a', { class: 'tx', href: `#/add/${t.id}` },
     h('div', { class: 'grow' },
-      h('div', { class: 'name' }, t.category || 'Uncategorised'),
+      h('div', { class: 'name' }, t.category || '未分類'),
       h('div', { class: 'muted' }, sub)),
     h('div', { class: `amt ${t.type}` }, sign + money(t.amount, currency)));
 }

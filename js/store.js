@@ -4,15 +4,24 @@ import { uid, today } from './util.js';
 
 const KEY = 'moneyamplifier.data.v1';
 
+// The type keys are what is saved (so old data keeps working); TYPE_LABEL is what is shown.
 export const INVEST_TYPES = ['Stock', 'ETF', 'Bond', 'Fund', 'Crypto', 'Deposit', 'Other'];
 export const TYPE_EMOJI = { Stock: '📈', ETF: '🧺', Bond: '🏛️', Fund: '🗂️', Crypto: '🪙', Deposit: '🏦', Other: '📦' };
+export const TYPE_LABEL = { Stock: '股票', ETF: 'ETF', Bond: '債券', Fund: '基金', Crypto: '加密貨幣', Deposit: '存款', Other: '其他' };
 
 /** Expenses in this category are purchases: they also create/increase a holding on the Invest page. */
-export const INVEST_CATEGORY = '📈 Investment';
+export const INVEST_CATEGORY = '📈 投資';
 /** Income in this category is a cash-out: money coming back from a holding on the Invest page. */
-export const INVEST_OUT_CATEGORY = '💵 Investment cash-out';
-const OLD_INTEREST = '📈 Investments'; // income category renamed to Interest
-const INTEREST = '📈 Interest';
+export const INVEST_OUT_CATEGORY = '💵 投資贖回';
+const INTEREST = '📈 利息';
+// the app used to be in English: saved data with these category names is renamed when it loads
+const CATEGORY_RENAMES = {
+  '🍜 Food': '🍜 餐飲', '🛒 Groceries': '🛒 超市', '🚌 Transport': '🚌 交通', '🏠 Housing': '🏠 居住', '💡 Utilities': '💡 水電',
+  '🎬 Fun': '🎬 娛樂', '👕 Shopping': '👕 購物', '💊 Health': '💊 醫療', '📚 Learning': '📚 學習', '🎁 Gifts': '🎁 禮物',
+  '✈️ Travel': '✈️ 旅遊', '📦 Other': '📦 其他', '📈 Investment': INVEST_CATEGORY,
+  '💼 Salary': '💼 薪水', '🎯 Bonus': '🎯 獎金', '📈 Interest': INTEREST, '📈 Investments': INTEREST, '💵 Investment cash-out': INVEST_OUT_CATEGORY, '💰 Other income': '💰 其他收入',
+};
+const renameCategory = (c) => CATEGORY_RENAMES[c] || c;
 
 /** Buying into / cashing out of an investment moves money between cash and investments; it is not spending or earning. */
 export const isTransfer = (t) =>
@@ -22,11 +31,12 @@ export const isAuto = (i) => !!i.ticker && i.shares > 0;
 
 // Accounts are the user's own bank accounts (typed in the first time, picked from a list afterwards).
 // How a payment was made is a separate tag: cash, transfer or credit card.
-const defaultAccounts = () => [{ id: 'main', name: 'Account', opening: 0 }];
+const DEFAULT_ACCOUNT = '帳戶';
+const defaultAccounts = () => [{ id: 'main', name: DEFAULT_ACCOUNT, opening: 0 }];
 export const METHODS = [
-  { id: 'cash', label: 'Cash' },
-  { id: 'transfer', label: 'Transfer' },
-  { id: 'card', label: 'Credit card' },
+  { id: 'cash', label: '現金' },
+  { id: 'transfer', label: '轉帳' },
+  { id: 'card', label: '信用卡' },
 ];
 export const methodLabel = (id) => (METHODS.find((m) => m.id === id) || { label: '' }).label;
 const LEGACY_ACCOUNTS = { cash: 'cash', bank: 'transfer', card: 'card' }; // the first version of accounts used these as 'accounts'
@@ -35,9 +45,9 @@ export const defaults = () => ({
   version: 3,
   settings: { currency: 'TWD', startDay: 1, autoPrices: true, twelveKey: '', lastPriceRefresh: '', lastAccount: '', lastMethod: '' },
   categories: {
-    expense: ['🍜 Food', '🛒 Groceries', '🚌 Transport', '🏠 Housing', '💡 Utilities', '🎬 Fun',
-      '👕 Shopping', '💊 Health', '📚 Learning', '🎁 Gifts', '✈️ Travel', INVEST_CATEGORY, '📦 Other'],
-    income: ['💼 Salary', '🎯 Bonus', INTEREST, INVEST_OUT_CATEGORY, '💰 Other income'],
+    expense: ['🍜 餐飲', '🛒 超市', '🚌 交通', '🏠 居住', '💡 水電', '🎬 娛樂',
+      '👕 購物', '💊 醫療', '📚 學習', '🎁 禮物', '✈️ 旅遊', INVEST_CATEGORY, '📦 其他'],
+    income: ['💼 薪水', '🎯 獎金', INTEREST, INVEST_OUT_CATEGORY, '💰 其他收入'],
   },
   accounts: defaultAccounts(), // { id, name, opening }
   // { id, date, type: 'expense'|'income', amount, category, account (id), method ('cash'|'transfer'|'card'|''), note, investId?, holdValue?, shares? }
@@ -58,7 +68,7 @@ const str = (v, max = 80) => String(v ?? '').slice(0, max);
 
 /** Turn untrusted data (saved file / import) into a valid state object. Throws if it's not usable. */
 export function sanitize(raw) {
-  if (!raw || typeof raw !== 'object') throw new Error('Not a MoneyAmplifier backup.');
+  if (!raw || typeof raw !== 'object') throw new Error('這不是 MoneyAmplifier 的備份檔。');
   const d = defaults();
   const out = { ...d, settings: { ...d.settings }, categories: { ...d.categories }, profile: { ...d.profile }, accounts: [], transactions: [], investments: [], valueLog: [], netWorth: [] };
 
@@ -92,7 +102,7 @@ export function sanitize(raw) {
     out.accounts[0].opening = rawAccounts.reduce((a, x) => a + x.opening, 0);
     rawAccounts.forEach((a) => { accountMap[a.id] = 'main'; methodMap[a.id] = LEGACY_ACCOUNTS[a.id]; });
   } else if (rawAccounts.length) {
-    out.accounts = rawAccounts.map((a) => (a.name === '🏦 Account' ? { ...a, name: 'Account' } : a)); // the old default name had an emoji
+    out.accounts = rawAccounts.map((a) => (a.name === '🏦 Account' || a.name === 'Account' ? { ...a, name: DEFAULT_ACCOUNT } : a)); // the old English default names
   } else {
     out.accounts = defaultAccounts();
     if (Number.isFinite(num(p.openingCash))) out.accounts[0].opening = num(p.openingCash);
@@ -106,15 +116,14 @@ export function sanitize(raw) {
     const list = raw.categories && Array.isArray(raw.categories[t]) ? raw.categories[t] : null;
     if (list) out.categories[t] = [...new Set(list.map((c) => str(c, 40).trim()).filter(Boolean))];
   }
-  // migrations: income "Investments" -> "Interest"; the Investment expense category must always exist
-  out.categories.income = [...new Set(out.categories.income.map((c) => (c === OLD_INTEREST ? INTEREST : c)))];
+  // migrations: English default names -> Chinese; the Investment categories must always exist
+  for (const t of ['expense', 'income']) out.categories[t] = [...new Set(out.categories[t].map(renameCategory))];
   if (!out.categories.expense.includes(INVEST_CATEGORY)) out.categories.expense.push(INVEST_CATEGORY);
   if (!out.categories.income.includes(INVEST_OUT_CATEGORY)) out.categories.income.push(INVEST_OUT_CATEGORY);
   for (const t of Array.isArray(raw.transactions) ? raw.transactions : []) {
     const amount = num(t && t.amount);
     if (!t || !isDate(t.date) || !(t.type === 'expense' || t.type === 'income') || !(amount > 0)) continue;
-    let category = str(t.category, 40);
-    if (t.type === 'income' && category === OLD_INTEREST) category = INTEREST;
+    const category = renameCategory(str(t.category, 40));
     const rec = {
       id: str(t.id, 40) || uid(), date: t.date, type: t.type, amount, category, note: str(t.note, 200),
       account: accountIds.has(accountMap[t.account] || t.account) ? (accountMap[t.account] || t.account) : out.accounts[0].id, // entries from before accounts existed go to the first one
@@ -197,7 +206,7 @@ function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch (e) {
-    alert('Could not save: browser storage is full or blocked.');
+    alert('無法儲存：瀏覽器儲存空間已滿或被封鎖。');
   }
 }
 
@@ -228,7 +237,7 @@ export function ensureAccount(st, name) {
   st.accounts.push(a);
   return a.id;
 }
-export const accountName = (s, id) => (s.accounts.find((a) => a.id === id) || { name: 'Unknown account' }).name;
+export const accountName = (s, id) => (s.accounts.find((a) => a.id === id) || { name: '未知帳戶' }).name;
 /** One account's balance = its starting balance + its income − its expenses (whatever the payment method). */
 export function accountBalance(s, id) {
   const a = s.accounts.find((x) => x.id === id);
@@ -325,13 +334,13 @@ function csv(rows) {
   return '﻿' + rows.map((r) => r.map(safe).join(',')).join('\r\n');
 }
 export function exportCSV() {
-  const rows = [['date', 'account', 'method', 'type', 'category', 'amount', 'note']];
+  const rows = [['日期', '帳戶', '付款方式', '類型', '類別', '金額', '備註']];
   [...state.transactions].sort((a, b) => a.date.localeCompare(b.date))
-    .forEach((t) => rows.push([t.date, accountName(state, t.account), t.method, t.type, t.category, t.amount, t.note]));
+    .forEach((t) => rows.push([t.date, accountName(state, t.account), methodLabel(t.method), t.type === 'income' ? '收入' : '支出', t.category, t.amount, t.note]));
   return csv(rows);
 }
 export function exportInvestmentsCSV() {
-  const rows = [['name', 'type', 'institution', 'amount', 'updated']];
-  state.investments.forEach((i) => rows.push([i.name, i.type, i.institution, i.amount, i.updated]));
+  const rows = [['名稱', '類型', '機構', '金額', '更新日期']];
+  state.investments.forEach((i) => rows.push([i.name, TYPE_LABEL[i.type] || i.type, i.institution, i.amount, i.updated]));
   return csv(rows);
 }

@@ -1,7 +1,7 @@
 {
   "name": "MoneyAmplifier",
   "short_name": "MoneyAmp",
-  "description": "Personal money tracker with a Shiba: spending, investments and net worth.",
+  "description": "個人記帳：支出、投資和淨資產。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

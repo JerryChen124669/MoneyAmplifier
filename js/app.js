@@ -28,7 +28,7 @@ function render() {
     cleanup = view.render(root, arg) || null;
   } catch (e) {
     console.error(e);
-    root.textContent = 'Something went wrong showing this page.';
+    root.textContent = '顯示這個頁面時發生錯誤。';
   }
 }
 

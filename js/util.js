@@ -27,7 +27,7 @@ export const sum = (arr, pick = (x) => x) => arr.reduce((a, x) => a + pick(x), 0
 
 export function money(n, currency = 'TWD') {
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n);
+    return new Intl.NumberFormat('zh-TW', { style: 'currency', currency }).format(n);
   } catch {
     return `${currency} ${Number(n).toFixed(2)}`;
   }
@@ -65,16 +65,16 @@ export function shiftKey(key, delta) {
 
 export function periodLabel(key, startDay = 1) {
   const [y, m] = key.split('-').map(Number);
-  if (startDay === 1) return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  if (startDay === 1) return new Date(y, m - 1, 1).toLocaleDateString('zh-TW', { month: 'long', year: 'numeric' });
   const { start, end } = periodRange(key, startDay);
   const last = new Date(end + 'T00:00:00');
   last.setDate(last.getDate() - 1);
-  const fmt = (d) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const fmt = (d) => d.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
   return `${fmt(new Date(start + 'T00:00:00'))} – ${fmt(last)}`;
 }
 
 export function dayLabel(dateStr) {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('zh-TW', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export function download(filename, text, mime = 'application/json') {

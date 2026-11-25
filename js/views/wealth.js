@@ -4,7 +4,7 @@ import { h, money, ymd, uid } from '../util.js';
 import { getState, update, netWorthNow, accountBalance } from '../store.js';
 import { toast, empty, cssVar, donut, accountPicker, activeAccount } from '../components.js';
 
-export const title = 'Profile';
+export const title = '資產';
 
 const nextMonth = (m) => {
   const [y, mo] = m.split('-').map(Number);
@@ -32,17 +32,17 @@ export function render(root) {
 
   const charts = [];
   root.append(h('div', { class: 'card' },
-    h('div', { class: 'muted' }, 'Your net worth today'),
+    h('div', { class: 'muted' }, '目前淨資產'),
     h('div', { class: `big ${now.net >= 0 ? 'income' : 'expense'}` }, money(now.net, currency)),
     prev ? h('div', { class: `muted ${now.net >= net(prev) ? 'income' : 'expense'}` },
-      `${now.net >= net(prev) ? '▲' : '▼'} ${money(Math.abs(now.net - net(prev)), currency)} vs ${prev.month}`) : null,
+      `${now.net >= net(prev) ? '▲' : '▼'} ${money(Math.abs(now.net - net(prev)), currency)} 對比 ${prev.month}`) : null,
     h('div', { class: 'stats', style: 'margin-top:12px' },
-      h('div', {}, h('span', { class: 'muted' }, 'Accounts'), h('b', {}, money(now.cash, currency))),
-      h('div', {}, h('span', { class: 'muted' }, 'Investments'), h('b', {}, money(now.invest, currency))),
-      h('div', {}, h('span', { class: 'muted' }, 'Debts'), h('b', { class: 'expense' }, money(now.debts, currency))))));
+      h('div', {}, h('span', { class: 'muted' }, '帳戶'), h('b', {}, money(now.cash, currency))),
+      h('div', {}, h('span', { class: 'muted' }, '投資'), h('b', {}, money(now.invest, currency))),
+      h('div', {}, h('span', { class: 'muted' }, '負債'), h('b', { class: 'expense' }, money(now.debts, currency))))));
 
   // every account's balance
-  root.append(h('div', { class: 'card' }, h('h2', {}, 'Accounts'),
+  root.append(h('div', { class: 'card' }, h('h2', {}, '各帳戶餘額'),
     s.accounts.map((a) => {
       const bal = accountBalance(s, a.id);
       return h('div', { class: 'tx' },
@@ -60,13 +60,13 @@ export function render(root) {
   if (parts.length) {
     const d = donut(parts, currency);
     charts.push(d);
-    root.append(h('div', { class: 'card' }, h('h2', {}, 'Where your money is'), d.el));
+    root.append(h('div', { class: 'card' }, h('h2', {}, '資產分布'), d.el));
   }
 
   // cash vs time and investments vs time: side by side on wide screens, one at a time (with a switch) on phones
   if (typeof Chart !== 'undefined') {
     root.classList.add('wide');
-    const compact = new Intl.NumberFormat(undefined, { notation: 'compact' });
+    const compact = new Intl.NumberFormat('zh-TW', { notation: 'compact' });
 
     // balance at the end of each calendar month for the chosen account (or all accounts), worked out from the transactions
     const acct = activeAccount();
@@ -101,13 +101,13 @@ export function render(root) {
       return chart;
     };
     const panes = [
-      { key: 'cash', label: 'Accounts', title: `${acct === 'all' ? 'All accounts' : acctRec.name} over time`, pts: cashPts, color: '#5f7fa6', soft: 'rgba(95,127,166,.18)', now: nowBalance },
-      { key: 'invest', label: 'Investments', title: 'Investments over time', pts: investPts, color: '#5f9a82', soft: 'rgba(95,154,130,.2)', now: now.invest },
+      { key: 'cash', label: '帳戶', title: `${acct === 'all' ? '所有帳戶' : acctRec.name} 變化`, pts: cashPts, color: '#5f7fa6', soft: 'rgba(95,127,166,.18)', now: nowBalance },
+      { key: 'invest', label: '投資', title: '投資變化', pts: investPts, color: '#5f9a82', soft: 'rgba(95,154,130,.2)', now: now.invest },
     ].map((p) => {
       p.canvas = h('canvas');
-      const body = p.pts.length ? h('div', { class: 'chart-box' }, p.canvas) : empty('Nothing to chart yet.');
+      const body = p.pts.length ? h('div', { class: 'chart-box' }, p.canvas) : empty('還沒有資料可畫圖。');
       p.el = h('div', { class: 'card pane' }, h('h2', {}, p.title), h('div', { class: 'big' }, money(p.now, currency)), body,
-        p.key === 'invest' && p.pts.length < 3 ? h('div', { class: 'muted' }, 'Your investment value is saved every day you open the app, so this fills in over time.') : null);
+        p.key === 'invest' && p.pts.length < 3 ? h('div', { class: 'muted' }, '每天開啟 App 都會記錄投資價值，圖表會隨時間逐漸完整。') : null);
       return p;
     });
     const show = (key) => {
@@ -123,28 +123,28 @@ export function render(root) {
   // inputs that feed the net worth
   const openings = s.accounts.map((a) => ({ id: a.id, el: h('input', { type: 'number', inputmode: 'decimal', step: 'any', value: a.opening }) }));
   const debts = h('input', { type: 'number', inputmode: 'decimal', min: '0', step: 'any', value: s.profile.debts });
-  root.append(h('div', { class: 'card stack' }, h('h2', {}, 'What counts'),
-    h('p', { class: 'muted', style: 'margin:0' }, 'An account\'s balance = its starting balance + its income − its expenses. Investments come from the Invest tab. Add or rename accounts in Settings.'),
-    s.accounts.map((a, i) => h('label', { class: 'field' }, `${a.name}: starting balance (before your first entry)`, openings[i].el)),
-    h('label', { class: 'field' }, 'Total debts (loans, credit card balance owed…)', debts),
+  root.append(h('div', { class: 'card stack' }, h('h2', {}, '計算設定'),
+    h('p', { class: 'muted', style: 'margin:0' }, '帳戶餘額 = 起始餘額 + 收入 − 支出。投資來自「投資」頁。帳戶可在設定中新增或改名。'),
+    s.accounts.map((a, i) => h('label', { class: 'field' }, `${a.name}：起始餘額（第一筆紀錄之前）`, openings[i].el)),
+    h('label', { class: 'field' }, '總負債（貸款、信用卡未還金額…）', debts),
     h('button', {
       class: 'btn-primary btn-block',
       onClick: () => {
         const vals = openings.map((o) => parseFloat(o.el.value || '0')), d = parseFloat(debts.value || '0');
-        if (vals.some((v) => !Number.isFinite(v)) || !(d >= 0)) return toast('Check the numbers');
+        if (vals.some((v) => !Number.isFinite(v)) || !(d >= 0)) return toast('請檢查數字');
         update((st) => { openings.forEach((o, i) => { st.accounts.find((a) => a.id === o.id).opening = vals[i]; }); st.profile.debts = d; });
-        toast('Saved!');
+        toast('已儲存！');
       },
-    }, 'Save')));
+    }, '儲存')));
 
-  root.append(h('div', { class: 'card' }, h('h2', {}, 'Monthly snapshots'),
+  root.append(h('div', { class: 'card' }, h('h2', {}, '每月快照'),
     rows.length ? [...rows].reverse().map((r) => h('div', { class: 'tx' },
-      h('div', { class: 'grow' }, h('div', { class: 'name' }, r.month), h('div', { class: 'muted' }, `Cash ${money(r.cash, currency)} · Invest ${money(r.invest, currency)} · Debts ${money(r.debts, currency)}`)),
+      h('div', { class: 'grow' }, h('div', { class: 'name' }, r.month), h('div', { class: 'muted' }, `帳戶 ${money(r.cash, currency)} · 投資 ${money(r.invest, currency)} · 負債 ${money(r.debts, currency)}`)),
       h('div', { class: 'amt' }, money(net(r), currency)),
       r.month === month ? null : h('button', {
-        class: 'btn-danger', 'aria-label': `Delete ${r.month}`,
-        onClick: () => { if (confirm(`Delete the ${r.month} snapshot?`)) update((st) => { st.netWorth = st.netWorth.filter((x) => x.id !== r.id); }); },
-      }, '×'))) : empty('No snapshots yet.')));
+        class: 'btn-danger', 'aria-label': `刪除 ${r.month}`,
+        onClick: () => { if (confirm(`刪除 ${r.month} 的快照？`)) update((st) => { st.netWorth = st.netWorth.filter((x) => x.id !== r.id); }); },
+      }, '×'))) : empty('還沒有快照。')));
 
   return () => charts.forEach((c) => c.destroy());
 }

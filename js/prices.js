@@ -34,10 +34,10 @@ async function rate(from, to) {
   if (from === to) return 1;
   if (!rates[from]) {
     const data = await getJSON(`https://open.er-api.com/v6/latest/${from}`);
-    if (data.result !== 'success') throw new Error('exchange rates unavailable');
+    if (data.result !== 'success') throw new Error('無法取得匯率');
     rates[from] = data.rates;
   }
-  if (!rates[from][to]) throw new Error(`no ${from}→${to} rate`);
+  if (!rates[from][to]) throw new Error(`沒有 ${from}→${to} 的匯率`);
   return rates[from][to];
 }
 
@@ -59,26 +59,26 @@ export function refreshPrices() {
         for (const i of crypto) {
           const price = p[i.ticker.toLowerCase()];
           if (price > 0) found.set(i.id, { price, priceCur: '', unit: price });
-          else result.errors.push(`${i.name}: "${i.ticker}" not found`);
+          else result.errors.push(`${i.name}：找不到「${i.ticker}」`);
         }
-      } catch (e) { result.errors.push(`Crypto prices: ${e.message}`); }
+      } catch (e) { result.errors.push(`加密貨幣價格：${e.message}`); }
     }
 
     const stocks = targets.filter((i) => i.type !== 'Crypto');
     if (stocks.length) {
-      if (!s.settings.twelveKey) result.errors.push('Stocks: add your free Twelve Data key in Settings to update them');
+      if (!s.settings.twelveKey) result.errors.push('股票：請先在設定中填入免費的 Twelve Data 金鑰');
       else {
         try {
           const symbols = [...new Set(stocks.map((i) => i.ticker))];
           const p = await stockPrices(symbols, s.settings.twelveKey);
           for (const i of stocks) {
             const price = p[i.ticker];
-            if (!(price > 0)) { result.errors.push(`${i.name}: no price for "${i.ticker}"`); continue; }
+            if (!(price > 0)) { result.errors.push(`${i.name}：「${i.ticker}」沒有報價`); continue; }
             const from = i.priceCur || cur;
             try { found.set(i.id, { price, priceCur: i.priceCur, unit: price * (await rate(from, cur)) }); }
             catch (e) { result.errors.push(`${i.name}: ${e.message}`); }
           }
-        } catch (e) { result.errors.push(`Stock prices: ${e.message}`); }
+        } catch (e) { result.errors.push(`股票價格：${e.message}`); }
       }
     }
 

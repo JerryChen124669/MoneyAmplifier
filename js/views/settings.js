@@ -3,18 +3,18 @@ import { h, download, today, uid } from '../util.js';
 import { getState, update, replaceAll, exportJSON, exportCSV, exportInvestmentsCSV, defaults, INVEST_CATEGORY, INVEST_OUT_CATEGORY } from '../store.js';
 import { toast } from '../components.js';
 
-export const title = 'Settings';
+export const title = '設定';
 const CURRENCIES = ['TWD', 'USD', 'EUR', 'JPY', 'GBP', 'CNY', 'HKD', 'SGD', 'KRW', 'AUD', 'CAD', 'THB', 'MYR'];
 
 export function render(root) {
   const s = getState();
 
   const categoryCard = (type, label) => {
-    const input = h('input', { type: 'text', maxlength: '40', placeholder: 'New category, e.g. 🐶 Pets', style: 'margin:0' });
+    const input = h('input', { type: 'text', maxlength: '40', placeholder: '新增類別，例如：🐶 寵物', style: 'margin:0' });
     const add = () => {
       const name = input.value.trim();
       if (!name) return;
-      if (s.categories[type].includes(name)) return toast('Already exists');
+      if (s.categories[type].includes(name)) return toast('已經存在');
       update((st) => st.categories[type].push(name));
     };
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
@@ -23,43 +23,43 @@ export function render(root) {
         h('div', { class: 'grow' }, c),
         // the Investment category is what links purchases to the Invest page, so it stays fixed
         (c === INVEST_CATEGORY && type === 'expense') || (c === INVEST_OUT_CATEGORY && type === 'income')
-          ? h('span', { class: 'muted' }, 'linked to Invest page')
-          : [h('button', { 'aria-label': `Rename ${c}`, onClick: () => rename(type, c) }, 'Rename'),
-            h('button', { class: 'btn-danger', 'aria-label': `Delete ${c}`, onClick: () => removeCat(type, c) }, '×')])),
-      h('div', { class: 'row', style: 'margin-top:10px' }, input, h('button', { onClick: add }, 'Add')));
+          ? h('span', { class: 'muted' }, '與投資頁連動')
+          : [h('button', { 'aria-label': `重新命名 ${c}`, onClick: () => rename(type, c) }, '改名'),
+            h('button', { class: 'btn-danger', 'aria-label': `刪除 ${c}`, onClick: () => removeCat(type, c) }, '×')])),
+      h('div', { class: 'row', style: 'margin-top:10px' }, input, h('button', { onClick: add }, '新增')));
   };
 
   // ---- accounts: cash, bank accounts, each credit card… ----
   const accountsCard = () => {
-    const nameIn = h('input', { type: 'text', maxlength: '40', placeholder: 'New account, e.g. Fubon Bank', style: 'margin:0' });
-    const openIn = h('input', { type: 'number', inputmode: 'decimal', step: 'any', placeholder: 'Starting balance (optional)', style: 'margin:0' });
+    const nameIn = h('input', { type: 'text', maxlength: '40', placeholder: '新增帳戶，例如：富邦銀行', style: 'margin:0' });
+    const openIn = h('input', { type: 'number', inputmode: 'decimal', step: 'any', placeholder: '起始餘額（選填）', style: 'margin:0' });
     const add = () => {
       const name = nameIn.value.trim();
       if (!name) return;
-      if (s.accounts.some((a) => a.name === name)) return toast('Already exists');
+      if (s.accounts.some((a) => a.name === name)) return toast('已經存在');
       const opening = parseFloat(openIn.value || '0');
       update((st) => { st.accounts.push({ id: uid(), name, opening: Number.isFinite(opening) ? opening : 0 }); });
     };
     nameIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
-    return h('div', { class: 'card stack' }, h('h2', {}, 'Accounts'),
-      h('p', { class: 'muted', style: 'margin:0' }, 'Your bank accounts. You can also just type a new one when you record an expense or income, and it shows up here and in the suggestions next time. How you paid (cash, transfer or credit card) is chosen per entry. Starting balances are on the Profile tab.'),
+    return h('div', { class: 'card stack' }, h('h2', {}, '帳戶'),
+      h('p', { class: 'muted', style: 'margin:0' }, '你的銀行帳戶。記支出或收入時直接輸入新名稱也會自動新增，下次會出現在建議裡。付款方式（現金、轉帳、信用卡）在每筆紀錄中選擇。起始餘額在「資產」頁設定。'),
       s.accounts.map((a) => h('div', { class: 'row', style: 'padding:6px 0;border-bottom:1px solid var(--line)' },
         h('div', { class: 'grow' }, a.name),
-        h('button', { 'aria-label': `Rename ${a.name}`, onClick: () => renameAccount(a) }, 'Rename'),
-        h('button', { class: 'btn-danger', 'aria-label': `Delete ${a.name}`, onClick: () => removeAccount(a) }, '×'))),
-      h('div', { class: 'stack' }, nameIn, h('div', { class: 'row' }, openIn, h('button', { onClick: add }, 'Add'))));
+        h('button', { 'aria-label': `重新命名 ${a.name}`, onClick: () => renameAccount(a) }, '改名'),
+        h('button', { class: 'btn-danger', 'aria-label': `刪除 ${a.name}`, onClick: () => removeAccount(a) }, '×'))),
+      h('div', { class: 'stack' }, nameIn, h('div', { class: 'row' }, openIn, h('button', { onClick: add }, '新增'))));
   };
   function renameAccount(a) {
-    const name = (prompt('New name:', a.name) || '').trim();
+    const name = (prompt('新名稱：', a.name) || '').trim();
     if (!name || name === a.name) return;
-    if (s.accounts.some((x) => x.name === name)) return toast('Already exists');
+    if (s.accounts.some((x) => x.name === name)) return toast('已經存在');
     update((st) => { st.accounts.find((x) => x.id === a.id).name = name; });
   }
   function removeAccount(a) {
-    if (s.accounts.length <= 1) return toast('Keep at least one account');
+    if (s.accounts.length <= 1) return toast('至少要保留一個帳戶');
     const target = s.accounts.find((x) => x.id !== a.id);
     const count = s.transactions.filter((t) => t.account === a.id).length;
-    if (!confirm(count ? `Delete "${a.name}"? Its ${count} entr${count === 1 ? 'y' : 'ies'} and starting balance move to "${target.name}".` : `Delete "${a.name}"?`)) return;
+    if (!confirm(count ? `刪除「${a.name}」？它的 ${count} 筆紀錄和起始餘額會移到「${target.name}」。` : `刪除「${a.name}」？`)) return;
     update((st) => {
       const to = st.accounts.find((x) => x.id === target.id);
       to.opening += st.accounts.find((x) => x.id === a.id).opening;
@@ -70,66 +70,66 @@ export function render(root) {
   }
 
   function rename(type, oldName) {
-    const name = (prompt('New name:', oldName) || '').trim();
+    const name = (prompt('新名稱：', oldName) || '').trim();
     if (!name || name === oldName) return;
-    if (s.categories[type].includes(name)) return toast('Already exists');
+    if (s.categories[type].includes(name)) return toast('已經存在');
     update((st) => {
       st.categories[type] = st.categories[type].map((c) => (c === oldName ? name : c));
       st.transactions.forEach((t) => { if (t.type === type && t.category === oldName) t.category = name; });
     });
   }
   function removeCat(type, name) {
-    if (!confirm(`Remove "${name}"? Past entries keep their label.`)) return;
+    if (!confirm(`移除「${name}」？過去的紀錄會保留原標籤。`)) return;
     update((st) => { st.categories[type] = st.categories[type].filter((c) => c !== name); });
   }
 
   function importFile(file) {
     if (!file) return;
     file.text().then((text) => {
-      if (!confirm('Replace ALL current data with this backup?')) return;
-      try { replaceAll(JSON.parse(text)); toast('Backup restored'); } catch (e) { alert('Could not read that file: ' + e.message); }
+      if (!confirm('要用這份備份取代所有現有資料嗎？')) return;
+      try { replaceAll(JSON.parse(text)); toast('備份已還原'); } catch (e) { alert('無法讀取這個檔案：' + e.message); }
     });
   }
 
   const fileInput = h('input', { type: 'file', accept: 'application/json,.json', style: 'display:none', onChange: (e) => importFile(e.target.files[0]) });
 
   root.append(
-    h('div', { class: 'card stack' }, h('h2', {}, 'General'),
-      h('label', { class: 'field' }, 'Currency',
+    h('div', { class: 'card stack' }, h('h2', {}, '一般'),
+      h('label', { class: 'field' }, '貨幣',
         h('select', { value: s.settings.currency, onChange: (e) => update((st) => { st.settings.currency = e.target.value; }) },
           CURRENCIES.map((c) => h('option', { value: c }, c)))),
-      h('label', { class: 'field' }, 'Month starts on day (1 = calendar month, e.g. 25 if payday is the 25th)',
+      h('label', { class: 'field' }, '每月起算日（1 = 日曆月，例如發薪日是 25 日就填 25）',
         h('input', {
           type: 'number', min: '1', max: '31', value: s.settings.startDay,
           onChange: (e) => { const v = Math.min(31, Math.max(1, parseInt(e.target.value) || 1)); update((st) => { st.settings.startDay = v; }); },
         }))),
-    h('div', { class: 'card stack' }, h('h2', {}, 'Investment prices'),
-      h('p', { class: 'muted', style: 'margin:0' }, 'Holdings with a ticker and a number of shares are re-priced once a day when you open the app. Crypto needs nothing (CoinGecko). Stocks and ETFs need a free key from twelvedata.com. The key stays on this device and is left out of backups. Only the ticker is sent, never your amounts.'),
+    h('div', { class: 'card stack' }, h('h2', {}, '投資價格'),
+      h('p', { class: 'muted', style: 'margin:0' }, '有代號和股數的投資，每天開啟 App 時會自動更新價格。加密貨幣不需要設定（CoinGecko）。股票和 ETF 需要在 twelvedata.com 申請免費金鑰。金鑰只存在這台裝置上，不會包含在備份中。只會傳送代號，不會傳送你的金額。'),
       h('label', { class: 'check' },
         h('input', { type: 'checkbox', checked: s.settings.autoPrices, onChange: (e) => update((st) => { st.settings.autoPrices = e.target.checked; }, { silent: true }) }),
-        h('span', {}, 'Update prices automatically once a day')),
-      h('label', { class: 'field' }, 'Twelve Data key (for stocks / ETFs)',
+        h('span', {}, '每天自動更新價格一次')),
+      h('label', { class: 'field' }, 'Twelve Data 金鑰（股票／ETF 用）',
         h('input', {
           type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', maxlength: '80', value: s.settings.twelveKey,
           onChange: (e) => {
             const v = e.target.value.trim();
-            if (!/^[\w-]{0,80}$/.test(v)) return toast('That does not look like a key');
-            update((st) => { st.settings.twelveKey = v; }, { silent: true }); toast('Saved!');
+            if (!/^[\w-]{0,80}$/.test(v)) return toast('這看起來不像金鑰');
+            update((st) => { st.settings.twelveKey = v; }, { silent: true }); toast('已儲存！');
           },
         }))),
     accountsCard(),
-    categoryCard('expense', 'Expense categories'),
-    categoryCard('income', 'Income categories'),
-    h('div', { class: 'card stack' }, h('h2', {}, 'Your data'),
-      h('p', { class: 'muted', style: 'margin:0' }, 'Data is stored only in this browser on this device. Export a backup regularly, especially before clearing browser data.'),
-      h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-backup-${today()}.json`, exportJSON()) }, 'Export backup (JSON)'),
-      h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-${today()}.csv`, exportCSV(), 'text/csv') }, 'Export transactions (CSV)'),
-      h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-investments-${today()}.csv`, exportInvestmentsCSV(), 'text/csv') }, 'Export investments (CSV)'),
-      h('button', { class: 'btn-block', onClick: () => fileInput.click() }, 'Restore from backup…'),
+    categoryCard('expense', '支出類別'),
+    categoryCard('income', '收入類別'),
+    h('div', { class: 'card stack' }, h('h2', {}, '你的資料'),
+      h('p', { class: 'muted', style: 'margin:0' }, '資料只存在這台裝置的瀏覽器裡。請定期匯出備份，尤其是在清除瀏覽器資料之前。'),
+      h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-backup-${today()}.json`, exportJSON()) }, '匯出備份 (JSON)'),
+      h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-${today()}.csv`, exportCSV(), 'text/csv') }, '匯出收支紀錄 (CSV)'),
+      h('button', { class: 'btn-block', onClick: () => download(`moneyamplifier-investments-${today()}.csv`, exportInvestmentsCSV(), 'text/csv') }, '匯出投資 (CSV)'),
+      h('button', { class: 'btn-block', onClick: () => fileInput.click() }, '從備份還原…'),
       fileInput,
       h('button', {
         class: 'btn-danger btn-block',
-        onClick: () => { if (confirm('Erase ALL data on this device? This cannot be undone.') && confirm('Really erase everything?')) { replaceAll(defaults()); toast('All data erased'); } },
-      }, 'Erase all data')),
+        onClick: () => { if (confirm('要清除這台裝置上的所有資料嗎？此動作無法復原。') && confirm('真的要全部清除嗎？')) { replaceAll(defaults()); toast('所有資料已清除'); } },
+      }, '清除所有資料')),
     h('p', { class: 'muted', style: 'text-align:center' }, 'MoneyAmplifier v0.1'));
 }
